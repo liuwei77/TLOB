@@ -1,7 +1,7 @@
 import random
 from lightning import LightningModule
 import numpy as np
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, precision_recall_curve
 from torch import nn
 import os
 import torch
@@ -61,6 +61,7 @@ class Engine(LightningModule):
         self.test_losses = []
         self.test_targets = []
         self.test_predictions = []
+        self.test_proba = []
         self.val_targets = []
         self.val_loss = np.inf
         self.val_predictions = []
@@ -70,8 +71,11 @@ class Engine(LightningModule):
         self.first_test = True
         
     def forward(self, x, plot_att=False, batch_idx=None):
-        output, att_temporal, att_feature = self.model(x, plot_att)
-        if self.is_wandb and plot_att:
+        if self.model_type == "TRANSFORMER":
+            output, att_temporal, att_feature = self.model(x, plot_att)
+        else:
+            output = self.model(x)
+        if self.is_wandb and plot_att and self.model_type == "TRANSFORMER":
             for l in range(len(att_temporal)):
                 for i in range(self.num_heads):
                     plt.figure(figsize=(10, 8))
@@ -139,6 +143,7 @@ class Engine(LightningModule):
                 batch_loss = self.loss(y_hat, y)
                 self.test_targets.append(y.cpu().numpy())
                 self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
+                self.test_proba.append(torch.softmax(y_hat, dim=1)[:, 1].cpu().numpy())
                 batch_loss_mean = torch.mean(batch_loss)
                 self.test_losses.append(batch_loss_mean.item())
         else:
@@ -146,6 +151,7 @@ class Engine(LightningModule):
             batch_loss = self.loss(y_hat, y)
             self.test_targets.append(y.cpu().numpy())
             self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
+            self.test_proba.append(torch.softmax(y_hat, dim=1)[:, 1].cpu().numpy())
             batch_loss_mean = torch.mean(batch_loss)
             self.test_losses.append(batch_loss_mean.item())
         return batch_loss_mean
@@ -206,6 +212,9 @@ class Engine(LightningModule):
         self.test_predictions = []
         self.test_losses = []  
         self.first_test = False
+        test_proba = np.concatenate(self.test_proba)
+        precision, recall, _ = precision_recall_curve(targets, test_proba, pos_label=1)
+        plot_pr_curves(recall, precision, self.is_wandb)
         with self.ema.average_parameters():
             self.trainer.save_checkpoint(path_ckpt)   
         if self.model_type == "TRANSFORMER":
@@ -268,4 +277,15 @@ def compute_most_attended(att_feature):
                 average_values[layer, head, seq] = avg_value
     return most_frequent_indices, average_values
 
-    
+
+def plot_pr_curves(recall, precision, is_wandb):
+    plt.figure()
+    plt.plot(recall, precision, label='Precision-Recall')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+    if is_wandb:
+        wandb.log({"precision_recall_curve": wandb.Image(plt)})
+    else:
+        plt.show()
+    plt.close()

@@ -30,7 +30,7 @@ def run(config: Config, accelerator, model=None):
     seq_size = config.model.hyperparameters_fixed["seq_size"]
     horizon = config.experiment.horizon
     training_stocks = config.experiment.training_stocks
-    dataset = config.experiment.dataset.value
+    dataset = config.experiment.dataset_type.value
     if dataset == "LOBSTER":
         config.experiment.filename_ckpt = f"{dataset}_{training_stocks}_seq_size_{seq_size}_horizon_{horizon}_{run_name}"
     else:
@@ -55,16 +55,25 @@ def run(config: Config, accelerator, model=None):
 
 def train(config: Config, trainer: L.Trainer, run=None):
     print_setup(config)
-    dataset_type = config.experiment.dataset
+    dataset_type = config.experiment.dataset_type.value
     seq_size = config.model.hyperparameters_fixed["seq_size"]
     horizon = config.experiment.horizon
     model_type = config.model.type
     training_stocks = config.experiment.training_stocks
     testing_stocks = config.experiment.testing_stocks
-    dataset_type = config.experiment.dataset.value
-    if dataset_type == cst.Dataset.FI_2010:
+    dataset_type = config.experiment.dataset_type.value
+    if dataset_type == "FI-2010":
         path = cst.DATA_DIR + "/FI_2010"
         train_input, train_labels, val_input, val_labels, test_input, test_labels = fi_2010_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
+        data_module = DataModule(
+            train_set=Dataset(train_input, train_labels, seq_size),
+            val_set=Dataset(val_input, val_labels, seq_size),
+            test_set=Dataset(test_input, test_labels, seq_size),
+            batch_size=config.experiment.batch_size,
+            test_batch_size=config.experiment.batch_size*4,
+            num_workers=4
+        )
+        test_loaders = [data_module.test_dataloader()]
     else:
         for i in range(len(training_stocks)):
             if i == 0:
@@ -104,32 +113,24 @@ def train(config: Config, trainer: L.Trainer, run=None):
             persistent_workers=True
         )
             test_loaders.append(test_dataloader)
-      
-    if config.experiment.is_debug:
-        train_input = train_input[:1000]
-        val_input = val_input[:1000]
-        train_labels = train_labels[:500]
-        val_labels = val_labels[:500]
+            train_set = Dataset(train_input, train_labels, seq_size)
+        val_set = Dataset(val_input, val_labels, seq_size)
+        counts_train = torch.unique(train_labels, return_counts=True)
+        counts_val = torch.unique(val_labels, return_counts=True)
+        print("Train set shape: ", train_input.shape)
+        print("Val set shape: ", val_input.shape)
+        print("Classes counts in train set: ", counts_train[1])
+        print("Classes counts in val set: ", counts_val[1])
+        print(f"Classes distribution in train set: up {counts_train[1][0]/train_labels.shape[0]} stat {counts_train[1][1]/train_labels.shape[0]} down {counts_train[1][2]/train_labels.shape[0]} ", )
+        print(f"Classes distribution in val set: up {counts_val[1][0]/val_labels.shape[0]} stat {counts_val[1][1]/val_labels.shape[0]} down {counts_val[1][2]/val_labels.shape[0]} ", )
+        data_module = DataModule(
+            train_set=train_set,
+            val_set=val_set,
+            batch_size=config.experiment.batch_size,
+            test_batch_size=config.experiment.batch_size*4,
+            num_workers=4
+        )
         
-    train_set = Dataset(train_input, train_labels, seq_size)
-    val_set = Dataset(val_input, val_labels, seq_size)
-    counts_train = torch.unique(train_labels, return_counts=True)
-    counts_val = torch.unique(val_labels, return_counts=True)
-    print("Train set shape: ", train_input.shape)
-    print("Val set shape: ", val_input.shape)
-    print("Classes counts in train set: ", counts_train[1])
-    print("Classes counts in val set: ", counts_val[1])
-    print(f"Classes distribution in train set: up {counts_train[1][0]/train_labels.shape[0]} stat {counts_train[1][1]/train_labels.shape[0]} down {counts_train[1][2]/train_labels.shape[0]} ", )
-    print(f"Classes distribution in val set: up {counts_val[1][0]/val_labels.shape[0]} stat {counts_val[1][1]/val_labels.shape[0]} down {counts_val[1][2]/val_labels.shape[0]} ", )
-
-    data_module = DataModule(
-        train_set=train_set,
-        val_set=val_set,
-        batch_size=config.experiment.batch_size,
-        test_batch_size=config.experiment.batch_size*4,
-        num_workers=4
-    )
-    
     experiment_type = config.experiment.type
     if "FINETUNING" in experiment_type or "EVALUATION" in experiment_type:
         checkpoint = torch.load(config.experiment.checkpoint_reference, map_location=cst.DEVICE)
@@ -142,9 +143,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
         model_type = checkpoint["hyper_parameters"]["model_type"]#.value
         max_epochs = checkpoint["hyper_parameters"]["max_epochs"]
         horizon = checkpoint["hyper_parameters"]["horizon"]
-        dataset_type = checkpoint["hyper_parameters"]["dataset_type"]
         seq_size = checkpoint["hyper_parameters"]["seq_size"]
-        batch_size = checkpoint["hyper_parameters"]["batch_size"]
         if model_type == "MLP":
             model = Engine.load_from_checkpoint(
                 config.experiment.checkpoint_reference, 
@@ -184,6 +183,40 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 map_location=cst.DEVICE,
                 len_test_dataloader=len(test_loaders[0])
                 )
+        elif model_type == "BINCTABL":
+            model = Engine.load_from_checkpoint(
+                config.experiment.checkpoint_reference, 
+                seq_size=seq_size,
+                horizon=horizon,
+                max_epochs=max_epochs,
+                model_type=model_type,
+                is_wandb=config.experiment.is_wandb,
+                experiment_type=experiment_type,
+                lr=lr,
+                optimizer=optimizer,
+                filename_ckpt=filename_ckpt,
+                num_features=train_input.shape[1],
+                dataset_type=dataset_type,
+                map_location=cst.DEVICE,
+                len_test_dataloader=len(test_loaders[0])
+                )
+        elif model_type == "DEEPLOB":
+            model = Engine.load_from_checkpoint(
+                config.experiment.checkpoint_reference, 
+                seq_size=seq_size,
+                horizon=horizon,
+                max_epochs=max_epochs,
+                model_type=model_type,
+                is_wandb=config.experiment.is_wandb,
+                experiment_type=experiment_type,
+                lr=lr,
+                optimizer=optimizer,
+                filename_ckpt=filename_ckpt,
+                num_features=train_input.shape[1],
+                dataset_type=dataset_type,
+                map_location=cst.DEVICE,
+                len_test_dataloader=len(test_loaders[0])
+                )
               
     else:
         if model_type == cst.ModelType.MLP:
@@ -200,7 +233,9 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 hidden_dim=config.model.hyperparameters_fixed["hidden_dim"],
                 num_layers=config.model.hyperparameters_fixed["num_layers"],
                 num_features=train_input.shape[1],
-                dataset_type=dataset_type
+                dataset_type=dataset_type,
+                map_location=cst.DEVICE,
+                len_test_dataloader=len(test_loaders[0])
             )
         elif model_type == cst.ModelType.TRANSFORMER:
             model = Engine(
@@ -233,7 +268,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 optimizer=config.experiment.optimizer,
                 filename_ckpt=config.experiment.filename_ckpt,
                 num_features=train_input.shape[1],
-                dataset_type=dataset_type
+                dataset_type=dataset_type,
+                len_test_dataloader=len(test_loaders[0])
             )
         elif model_type == cst.ModelType.DEEPLOB:
             model = Engine(
@@ -247,11 +283,13 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 optimizer=config.experiment.optimizer,
                 filename_ckpt=config.experiment.filename_ckpt,
                 num_features=train_input.shape[1],
-                dataset_type=dataset_type
+                dataset_type=dataset_type,
+                len_test_dataloader=len(test_loaders[0])
             )
     
     print("total number of parameters: ", sum(p.numel() for p in model.parameters()))   
     train_dataloader, val_dataloader = data_module.train_dataloader(), data_module.val_dataloader()
+    
     if "TRAINING" in experiment_type or "FINETUNING" in experiment_type:
         trainer.fit(model, train_dataloader, val_dataloader)
         best_model_path = model.last_path_ckpt
@@ -306,7 +344,7 @@ def run_wandb(config: Config, accelerator):
         run.name = wandb_instance_name
         seq_size = config.model.hyperparameters_fixed["seq_size"]
         horizon = config.experiment.horizon
-        dataset = config.experiment.dataset.value
+        dataset = config.experiment.dataset_type.value
         training_stocks = config.experiment.training_stocks
         if dataset == "LOBSTER":
             config.experiment.filename_ckpt = f"{dataset}_{training_stocks}_seq_size_{seq_size}_horizon_{horizon}_{run_name}"
@@ -330,10 +368,10 @@ def run_wandb(config: Config, accelerator):
 
         # log simulation details in WANDB console
         run.log({"model": config.model.type.value}, commit=False)
-        run.log({"dataset": config.experiment.dataset.value}, commit=False)
+        run.log({"dataset": config.experiment.dataset_type.value}, commit=False)
         run.log({"seed": config.experiment.seed}, commit=False)
         run.log({"all_features": config.model.hyperparameters_fixed["all_features"]}, commit=False)
-        if config.experiment.dataset == cst.Dataset.LOBSTER:
+        if config.experiment.dataset_type == cst.Dataset.LOBSTER:
             for i in range(len(config.experiment.training_stocks)):
                 run.log({f"training stock{i}": config.experiment.training_stocks[i]}, commit=False)
             for i in range(len(config.experiment.testing_stocks)):
@@ -374,7 +412,7 @@ def sweep_init(config: Config):
 
 def print_setup(config: Config):
     print("Model type: ", config.model.type)
-    print("Dataset: ", config.experiment.dataset)
+    print("Dataset: ", config.experiment.dataset_type)
     print("Seed: ", config.experiment.seed)
     print("Sequence size: ", config.model.hyperparameters_fixed["seq_size"])
     print("Horizon: ", config.experiment.horizon)
@@ -384,7 +422,7 @@ def print_setup(config: Config):
     print("Is sweep: ", config.experiment.is_sweep)
     print(config.experiment.type)
     print("Is debug: ", config.experiment.is_debug) 
-    if config.experiment.dataset == cst.Dataset.LOBSTER:
+    if config.experiment.dataset_type == cst.Dataset.LOBSTER:
         print("Training stocks: ", config.experiment.training_stocks)
         print("Testing stocks: ", config.experiment.testing_stocks)
 

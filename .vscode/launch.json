@@ -12,8 +12,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "+model=transformer",
-                "hydra.job.chdir=False"
+                "+model=binctabl",
+                "hydra.job.chdir=False",
+                "hydra.run.dir=.",
             ]
         }
     ]

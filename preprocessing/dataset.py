@@ -35,11 +35,12 @@ class Dataset(data.Dataset):
         
     
 class DataModule(pl.LightningDataModule):
-    def   __init__(self, train_set, val_set, batch_size, test_batch_size,  is_shuffle_train=True, num_workers=16):
+    def   __init__(self, train_set, val_set, batch_size, test_batch_size,  is_shuffle_train=True, test_set=None, num_workers=16):
         super().__init__()
 
         self.train_set = train_set
         self.val_set = val_set
+        self.test_set = test_set
         self.batch_size = batch_size
         self.test_batch_size = test_batch_size
         self.is_shuffle_train = is_shuffle_train
@@ -70,7 +71,17 @@ class DataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             persistent_workers=True
         )
-        
+    
+    def test_dataloader(self):
+        return DataLoader(
+            dataset=self.test_set,
+            batch_size=self.test_batch_size,
+            shuffle=False,
+            pin_memory=self.pin_memory,
+            drop_last=False,
+            num_workers=self.num_workers,
+            persistent_workers=True
+        )
 
         
     

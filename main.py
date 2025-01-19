@@ -1,19 +1,17 @@
-from pathlib import Path
 import random
 import numpy as np
+import torchvision
 import wandb
-from lightning.pytorch.loggers import WandbLogger
 import torch
 import constants as cst
 import warnings
 import hydra
-import os
 from config.config import Config
 from run import run_wandb, run, sweep_init
 from preprocessing.lobster import LOBSTERDataBuilder
 warnings.filterwarnings("ignore")
 torch.autograd.set_detect_anomaly(True)
-
+torchvision.disable_beta_transforms_warning()
 
 @hydra.main(config_path="config", config_name="config")
 def hydra_app(config: Config):
@@ -23,7 +21,7 @@ def hydra_app(config: Config):
     else:
         accelerator = "gpu"
 
-    if config.experiment.dataset.value == "LOBSTER" and not config.experiment.is_data_preprocessed:
+    if config.experiment.dataset_type.value == "LOBSTER" and not config.experiment.is_data_preprocessed:
         # prepare the datasets, this will save train.npy, val.npy and test.npy in the data directory
         data_builder = LOBSTERDataBuilder(
             stocks=config.experiment.training_stocks,
