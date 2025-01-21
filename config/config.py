@@ -44,15 +44,15 @@ class Experiment:
     is_sweep: bool = False
     type: list = field(default_factory=lambda: ["EVALUATION"])
     is_debug: bool = False
-    checkpoint_reference: str = "data/checkpoints/MLP/val_loss=0.182_epoch=5_FI-2010_seq_size_384_horizon_10_nu_3_hi_144_lr_0.0003_se_384_al_True_ty_MLP_.ckpt"
-    dataset_type: Dataset = Dataset.FI_2010
+    checkpoint_reference: str = "data/checkpoints/TRANSFORMER/val_loss=1.019_epoch=0_LOBSTER_['INTC']_seq_size_128_horizon_100_nu_4_hi_46_nu_1_is_True_lr_0.0001_se_128_al_True_ty_TRANSFORMER_.ckpt"
+    dataset_type: Dataset = Dataset.LOBSTER
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
     sampling_quantity: int = 500
     training_stocks: list = field(default_factory=lambda: ["INTC"])
     testing_stocks: list = field(default_factory=lambda: ["INTC"])
     seed: int = 42
-    horizon: int = 10
+    horizon: int = 100
     max_epochs: int = 10
     if dataset_type == Dataset.FI_2010:
         batch_size: int = 32
