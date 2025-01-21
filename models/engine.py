@@ -214,7 +214,7 @@ class Engine(LightningModule):
         self.first_test = False
         test_proba = np.concatenate(self.test_proba)
         precision, recall, _ = precision_recall_curve(targets, test_proba, pos_label=1)
-        plot_pr_curves(recall, precision, self.is_wandb)
+        self.plot_pr_curves(recall, precision, self.is_wandb)
         with self.ema.average_parameters():
             self.trainer.save_checkpoint(path_ckpt)   
         if self.model_type == "TRANSFORMER":
@@ -251,6 +251,17 @@ class Engine(LightningModule):
             self.trainer.save_checkpoint(path_ckpt)
         self.last_path_ckpt = path_ckpt  
         
+    def plot_pr_curves(self, recall, precision, is_wandb):
+        plt.figure(figsize=(20, 10), dpi=80)
+        plt.plot(recall, precision, label='Precision-Recall', color='black')
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Precision-Recall Curve')
+        if is_wandb:
+            wandb.log({"precision_recall_curve": wandb.Image(plt)})
+        plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +"precision_recall_curve.pdf")
+        plt.show()
+        plt.close()
         
 def compute_most_attended(att_feature):
     ''' att_feature: list of tensors of shape (num_samples, num_layers, 2, num_heads, num_features) '''
@@ -278,14 +289,4 @@ def compute_most_attended(att_feature):
     return most_frequent_indices, average_values
 
 
-def plot_pr_curves(recall, precision, is_wandb):
-    plt.figure()
-    plt.plot(recall, precision, label='Precision-Recall')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Precision-Recall Curve')
-    if is_wandb:
-        wandb.log({"precision_recall_curve": wandb.Image(plt)})
-    else:
-        plt.show()
-    plt.close()
+

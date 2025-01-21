@@ -234,7 +234,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 num_layers=config.model.hyperparameters_fixed["num_layers"],
                 num_features=train_input.shape[1],
                 dataset_type=dataset_type,
-                map_location=cst.DEVICE,
                 len_test_dataloader=len(test_loaders[0])
             )
         elif model_type == cst.ModelType.TRANSFORMER:

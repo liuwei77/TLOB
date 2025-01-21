@@ -14,14 +14,14 @@ class Model:
     
 @dataclass
 class MLP(Model):
-    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 144, "lr": 0.0003, "seq_size": 384, "all_features": True})
+    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 46, "lr": 0.0003, "seq_size": 384, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [3, 6], "hidden_dim": [144, 128], "lr": [0.0003], "seq_size": [384]})
     type: ModelType = ModelType.MLP
     
     
 @dataclass
 class Transformer(Model):
-    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 4, "hidden_dim": 144, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
+    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 4, "hidden_dim": 46, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [4, 6], "hidden_dim": [144, 128, 256], "num_heads": [1], "is_sin_emb": [True], "lr": [0.0001], "seq_size": [128]})
     type: ModelType = ModelType.TRANSFORMER
     
@@ -44,7 +44,7 @@ class Experiment:
     is_sweep: bool = False
     type: list = field(default_factory=lambda: ["TRAINING"])
     is_debug: bool = False
-    checkpoint_reference: str = "data/checkpoints/TRANSFORMER/val_loss=0.192_epoch=8_FI-2010_seq_size_128_horizon_10_num_layers_4_hidden_dim_144_num_heads_1_is_sin_emb_True_lr_0.0001_seq_size_128_all_features_True_type_TRANSFORMER_last.ckpt"
+    checkpoint_reference: str = "data/checkpoints/MLP/val_loss=0.182_epoch=5_FI-2010_seq_size_384_horizon_10_nu_3_hi_144_lr_0.0003_se_384_al_True_ty_MLP_.ckpt"
     dataset_type: Dataset = Dataset.LOBSTER
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
@@ -54,7 +54,10 @@ class Experiment:
     seed: int = 42
     horizon: int = 100
     max_epochs: int = 10
-    batch_size: int = 128
+    if dataset_type == Dataset.FI_2010:
+        batch_size: int = 32
+    else:
+        batch_size: int = 128
     filename_ckpt: str = "model.ckpt"
     optimizer: str = "Adam"
     

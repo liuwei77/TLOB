@@ -1,8 +1,7 @@
-data/checkpoints
-data/INTC*
-data/TSLA*
-data/FI*
 wandb
 outputs
 .hydra
 __pycache__
+lightning_logs
+data 
+preprocessing
