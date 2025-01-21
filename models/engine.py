@@ -259,7 +259,7 @@ class Engine(LightningModule):
         plt.title('Precision-Recall Curve')
         if is_wandb:
             wandb.log({"precision_recall_curve": wandb.Image(plt)})
-        plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +"precision_recall_curve.pdf")
+        plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +"precision_recall_curve.svg")
         plt.show()
         plt.close()
         

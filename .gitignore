@@ -3,5 +3,8 @@ outputs
 .hydra
 __pycache__
 lightning_logs
-data 
+data/d*
+data/I*
+data/T*
+data/F*
 preprocessing

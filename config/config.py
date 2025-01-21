@@ -15,14 +15,14 @@ class Model:
 @dataclass
 class MLP(Model):
     hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 46, "lr": 0.0003, "seq_size": 384, "all_features": True})
-    hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [3, 6], "hidden_dim": [144, 128], "lr": [0.0003], "seq_size": [384]})
+    hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [3, 6], "hidden_dim": [128], "lr": [0.0003], "seq_size": [384]})
     type: ModelType = ModelType.MLP
     
     
 @dataclass
 class Transformer(Model):
     hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 4, "hidden_dim": 46, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
-    hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [4, 6], "hidden_dim": [144, 128, 256], "num_heads": [1], "is_sin_emb": [True], "lr": [0.0001], "seq_size": [128]})
+    hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [4, 6], "hidden_dim": [128, 256], "num_heads": [1], "is_sin_emb": [True], "lr": [0.0001], "seq_size": [128]})
     type: ModelType = ModelType.TRANSFORMER
     
 @dataclass
@@ -40,19 +40,19 @@ class DeepLOB(Model):
 @dataclass
 class Experiment:
     is_data_preprocessed: bool = True
-    is_wandb: bool = True
+    is_wandb: bool = False
     is_sweep: bool = False
-    type: list = field(default_factory=lambda: ["TRAINING"])
+    type: list = field(default_factory=lambda: ["EVALUATION"])
     is_debug: bool = False
     checkpoint_reference: str = "data/checkpoints/MLP/val_loss=0.182_epoch=5_FI-2010_seq_size_384_horizon_10_nu_3_hi_144_lr_0.0003_se_384_al_True_ty_MLP_.ckpt"
-    dataset_type: Dataset = Dataset.LOBSTER
+    dataset_type: Dataset = Dataset.FI_2010
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
     sampling_quantity: int = 500
     training_stocks: list = field(default_factory=lambda: ["INTC"])
     testing_stocks: list = field(default_factory=lambda: ["INTC"])
     seed: int = 42
-    horizon: int = 100
+    horizon: int = 10
     max_epochs: int = 10
     if dataset_type == Dataset.FI_2010:
         batch_size: int = 32

@@ -297,17 +297,20 @@ def train(config: Config, trainer: L.Trainer, run=None):
         best_model.experiment_type = "EVALUATION"
         for i in range(len(test_loaders)):
             test_dataloader = test_loaders[i]
-            print("Testing on stock: ", testing_stocks[i])
             output = trainer.test(best_model, test_dataloader)
-            if run is not None:
+            if run is not None and dataset_type == "LOBSTER":
                 run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
+            elif run is not None and dataset_type == "FI-2010":
+                run.log({f"f1 FI-2010 ": output[0]["f1_score"]}, commit=False)
     else:
         for i in range(len(test_loaders)):
             test_dataloader = test_loaders[i]
-            print("Testing on stock: ", testing_stocks[i])
             output = trainer.test(model, test_dataloader)
-            if run is not None:
-                run.log({f"f1 {testing_stocks[i]}": output[0]["f1_score"]}, commit=False)
+            if run is not None and dataset_type == "LOBSTER":
+                run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
+            elif run is not None and dataset_type == "FI-2010":
+                run.log({f"f1 FI-2010 ": output[0]["f1_score"]}, commit=False)
+            
     
 
 def run_wandb(config: Config, accelerator):
