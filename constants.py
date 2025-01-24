@@ -7,8 +7,8 @@ class Dataset(Enum):
     
 
 class ModelType(Enum):
-    MLP = "MLP"
-    TRANSFORMER = "TRANSFORMER"
+    MLPLOB = "MLPLOB"
+    TLOB = "TLOB"
     BINCTABL = "BINCTABL"
     DEEPLOB = "DEEPLOB"
 

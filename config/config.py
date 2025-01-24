@@ -13,17 +13,17 @@ class Model:
     
     
 @dataclass
-class MLP(Model):
+class MLPLOB(Model):
     hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 46, "lr": 0.0003, "seq_size": 384, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [3, 6], "hidden_dim": [128], "lr": [0.0003], "seq_size": [384]})
-    type: ModelType = ModelType.MLP
+    type: ModelType = ModelType.MLPLOB
     
     
 @dataclass
-class Transformer(Model):
+class TLOB(Model):
     hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 4, "hidden_dim": 46, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [4, 6], "hidden_dim": [128, 256], "num_heads": [1], "is_sin_emb": [True], "lr": [0.0001], "seq_size": [128]})
-    type: ModelType = ModelType.TRANSFORMER
+    type: ModelType = ModelType.TLOB
     
 @dataclass
 class BiNCTABL(Model):
@@ -42,9 +42,9 @@ class Experiment:
     is_data_preprocessed: bool = True
     is_wandb: bool = False
     is_sweep: bool = False
-    type: list = field(default_factory=lambda: ["EVALUATION"])
+    type: list = field(default_factory=lambda: ["TRAINING"])
     is_debug: bool = False
-    checkpoint_reference: str = "data/checkpoints/TRANSFORMER/val_loss=1.019_epoch=0_LOBSTER_['INTC']_seq_size_128_horizon_100_nu_4_hi_46_nu_1_is_True_lr_0.0001_se_128_al_True_ty_TRANSFORMER_.ckpt"
+    checkpoint_reference: str = "data/checkpoints/"
     dataset_type: Dataset = Dataset.LOBSTER
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
@@ -52,7 +52,7 @@ class Experiment:
     training_stocks: list = field(default_factory=lambda: ["INTC"])
     testing_stocks: list = field(default_factory=lambda: ["INTC"])
     seed: int = 42
-    horizon: int = 100
+    horizon: int = 10
     max_epochs: int = 10
     if dataset_type == Dataset.FI_2010:
         batch_size: int = 32
@@ -70,7 +70,7 @@ class Config:
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
-cs.store(group="model", name="mlplob", node=MLP)
-cs.store(group="model", name="tlob", node=Transformer)
+cs.store(group="model", name="mlplob", node=MLPLOB)
+cs.store(group="model", name="tlob", node=TLOB)
 cs.store(group="model", name="binctabl", node=BiNCTABL)
 cs.store(group="model", name="deeplob", node=DeepLOB)

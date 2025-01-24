@@ -3,7 +3,7 @@ import torch
 from einops import rearrange
 import constants as cst
 from models.bin import BiN
-from models.mlp import MLP
+from models.mlplob import MLP
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -49,7 +49,7 @@ class TransformerLayer(nn.Module):
         return x, att
 
 
-class TransformerLOB(nn.Module):
+class TLOB(nn.Module):
     def __init__(self, 
                  hidden_dim: int,
                  num_layers: int,
