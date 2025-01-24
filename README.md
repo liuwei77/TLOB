@@ -1,11 +1,14 @@
 # Title of the paper
 This is the official repository for the paper ...
 
+# Abstract
+...
+
 # Getting Started 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+These instructions will get you a copy of the project up and running on your local machine for development and reproducibility purposes.
 
 ## Prerequisities
-This project requires Python and Conda. If you don't have them installed, please do so first. It is possible to do it using pip, but in that case you are on you own.   
+This project requires Python and Conda. If you don't have them installed, please do so first. It is possible to do it using pip, but in that case, you are on your own.   
 
 ## Installing
 To set up the environment for this project, follow these steps:
