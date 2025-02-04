@@ -74,11 +74,11 @@ class Engine(LightningModule):
         self.plot_att = plot_att
         
     def forward(self, x, plot_this_att=False, batch_idx=None):
-        if self.model_type == "TRANSFORMER":
+        if self.model_type == "TLOB":
             output, att_temporal, att_feature = self.model(x, plot_this_att)
         else:
             output = self.model(x)
-        if self.is_wandb and plot_this_att and self.model_type == "TRANSFORMER":
+        if self.is_wandb and plot_this_att and self.model_type == "TLOB":
             for l in range(len(att_temporal)):
                 for i in range(self.num_heads):
                     plt.figure(figsize=(10, 8))
@@ -135,7 +135,7 @@ class Engine(LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         # Test: with EMA
-        if batch_idx in self.random_indices and self.model_type == "TRANSFORMER" and self.first_test and self.plot_att:
+        if batch_idx in self.random_indices and self.model_type == "TLOB" and self.first_test and self.plot_att:
             plot_this_att = True
             print(f'Plotting attention for batch {batch_idx}')
         else:
@@ -219,7 +219,7 @@ class Engine(LightningModule):
         self.plot_pr_curves(recall, precision, self.is_wandb)
         with self.ema.average_parameters():
             self.trainer.save_checkpoint(path_ckpt)   
-        if self.model_type == "TRANSFORMER" and self.plot_att:
+        if self.model_type == "TLOB" and self.plot_att:
             plot = plot_mean_att_distance(np.array(self.model.mean_att_distance_temporal).mean(axis=0))
             if self.is_wandb:
                 wandb.log({"mean_att_distance": wandb.Image(plot)})
