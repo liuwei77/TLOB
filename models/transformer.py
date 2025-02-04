@@ -81,14 +81,14 @@ class TransformerLOB(nn.Module):
         for i in range(num_layers):
             if i != num_layers-1:
                 self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim))
-                self.layers.append(TransformerLayer(seq_size, num_heads, seq_size))
+                #self.layers.append(TransformerLayer(seq_size, num_heads, seq_size))
             else:
                 self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim//4))
-                self.layers.append(TransformerLayer(seq_size, num_heads, seq_size//4))
+                #self.layers.append(TransformerLayer(seq_size, num_heads, seq_size//4))
         self.att_temporal = []
         self.att_feature = []
         self.mean_att_distance_temporal = []
-        total_dim = (hidden_dim//4)*(seq_size//4)
+        total_dim = (hidden_dim//4)*(seq_size)
         self.final_layers = nn.ModuleList()
         while total_dim > 128:
             self.final_layers.append(nn.Linear(total_dim, total_dim//4))
@@ -118,7 +118,7 @@ class TransformerLOB(nn.Module):
         for i in range(len(self.layers)):
             x, att = self.layers[i](x)
             att = att.detach()
-            x = x.permute(0, 2, 1)
+            #x = x.permute(0, 2, 1)
             if store_att:
                 if i % 2 == 0:
                     att_temporal[i//2] = att[0].cpu().numpy()

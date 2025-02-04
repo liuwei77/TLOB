@@ -36,6 +36,7 @@ class Engine(LightningModule):
         num_heads=8,
         is_sin_emb=True,
         len_test_dataloader=None,
+        plot_att=False
     ):
         super().__init__()
         self.seq_size = seq_size
@@ -69,13 +70,14 @@ class Engine(LightningModule):
         self.save_hyperparameters()
         self.last_path_ckpt = None
         self.first_test = True
+        self.plot_att = plot_att
         
-    def forward(self, x, plot_att=False, batch_idx=None):
+    def forward(self, x, plot_this_att=False, batch_idx=None):
         if self.model_type == "TRANSFORMER":
-            output, att_temporal, att_feature = self.model(x, plot_att)
+            output, att_temporal, att_feature = self.model(x, plot_this_att)
         else:
             output = self.model(x)
-        if self.is_wandb and plot_att and self.model_type == "TRANSFORMER":
+        if self.is_wandb and plot_this_att and self.model_type == "TRANSFORMER":
             for l in range(len(att_temporal)):
                 for i in range(self.num_heads):
                     plt.figure(figsize=(10, 8))
@@ -132,14 +134,14 @@ class Engine(LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         # Test: with EMA
-        if batch_idx in self.random_indices and self.model_type == "TRANSFORMER" and self.first_test:
-            plot_att = True
+        if batch_idx in self.random_indices and self.model_type == "TRANSFORMER" and self.first_test and self.plot_att:
+            plot_this_att = True
             print(f'Plotting attention for batch {batch_idx}')
         else:
-            plot_att = False
+            plot_this_att = False
         if self.experiment_type == "TRAINING":
             with self.ema.average_parameters():
-                y_hat = self.forward(x, plot_att, batch_idx)
+                y_hat = self.forward(x, plot_this_att, batch_idx)
                 batch_loss = self.loss(y_hat, y)
                 self.test_targets.append(y.cpu().numpy())
                 self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
@@ -147,7 +149,7 @@ class Engine(LightningModule):
                 batch_loss_mean = torch.mean(batch_loss)
                 self.test_losses.append(batch_loss_mean.item())
         else:
-            y_hat = self.forward(x, plot_att, batch_idx)
+            y_hat = self.forward(x, plot_this_att, batch_idx)
             batch_loss = self.loss(y_hat, y)
             self.test_targets.append(y.cpu().numpy())
             self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
@@ -190,8 +192,7 @@ class Engine(LightningModule):
         self.val_targets = []
         self.val_predictions = [] 
         
-        
-        
+
     def on_test_epoch_end(self) -> None:
         targets = np.concatenate(self.test_targets)    
         predictions = np.concatenate(self.test_predictions)
@@ -217,7 +218,7 @@ class Engine(LightningModule):
         self.plot_pr_curves(recall, precision, self.is_wandb)
         with self.ema.average_parameters():
             self.trainer.save_checkpoint(path_ckpt)   
-        if self.model_type == "TRANSFORMER":
+        if self.model_type == "TRANSFORMER" and self.plot_att:
             plot = plot_mean_att_distance(np.array(self.model.mean_att_distance_temporal).mean(axis=0))
             if self.is_wandb:
                 wandb.log({"mean_att_distance": wandb.Image(plot)})
