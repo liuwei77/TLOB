@@ -12,16 +12,17 @@ class Model:
     
     
 @dataclass
-class MLP(Model):
+class MLPLOB(Model):
     hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 46, "lr": 0.0003, "seq_size": 384, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [3, 6], "hidden_dim": [128], "lr": [0.0003], "seq_size": [384]})
     type: ModelType = ModelType.MLP
     
+    
 @dataclass
-class Transformer(Model):
-    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 8, "hidden_dim": 46, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
+class TLOB(Model):
+    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 4, "hidden_dim": 46, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [4, 6], "hidden_dim": [128, 256], "num_heads": [1], "is_sin_emb": [True], "lr": [0.0001], "seq_size": [128]})
-    type: ModelType = ModelType.TRANSFORMER
+    type: ModelType = ModelType.TLOB
     
 @dataclass
 class BiNCTABL(Model):
@@ -42,7 +43,7 @@ class Experiment:
     is_sweep: bool = False
     type: list = field(default_factory=lambda: ["TRAINING"])
     is_debug: bool = False
-    checkpoint_reference: str = "data/checkpoints/TRANSFORMER/val_loss=0.351_epoch=4_FI-2010_seq_size_128_horizon_1_nu_8_hi_144_nu_1_is_True_lr_0.0001_se_128_al_True_ty_TRANSFORMER_.ckpt"
+    checkpoint_reference: str = "data/checkpoints/"
     dataset_type: Dataset = Dataset.LOBSTER
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
@@ -68,7 +69,7 @@ class Config:
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
-cs.store(group="model", name="mlplob", node=MLP)
-cs.store(group="model", name="tlob", node=Transformer)
+cs.store(group="model", name="mlplob", node=MLPLOB)
+cs.store(group="model", name="tlob", node=TLOB)
 cs.store(group="model", name="binctabl", node=BiNCTABL)
 cs.store(group="model", name="deeplob", node=DeepLOB)

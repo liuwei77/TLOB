@@ -24,6 +24,8 @@ def fi_2010_load(path, seq_size, horizon, all_features):
         tmp = 2
     elif horizon == 10:
         tmp = 1
+    else:
+        raise ValueError("Horizon not found")
     
     train_labels = full_train[-tmp, :].flatten()
     val_labels = full_val[-tmp, :].flatten()

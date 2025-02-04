@@ -144,7 +144,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
         max_epochs = checkpoint["hyper_parameters"]["max_epochs"]
         horizon = checkpoint["hyper_parameters"]["horizon"]
         seq_size = checkpoint["hyper_parameters"]["seq_size"]
-        if model_type == "MLP":
+        if model_type == "MLPLOB":
             model = Engine.load_from_checkpoint(
                 config.experiment.checkpoint_reference, 
                 seq_size=seq_size,
@@ -162,7 +162,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 dataset_type=dataset_type,
                 map_location=cst.DEVICE,
                 )
-        elif model_type == "TRANSFORMER":
+        elif model_type == "TLOB":
             model = Engine.load_from_checkpoint(
                 config.experiment.checkpoint_reference, 
                 seq_size=seq_size,
@@ -219,7 +219,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 )
               
     else:
-        if model_type == cst.ModelType.MLP:
+        if model_type == cst.ModelType.MLPLOB:
             model = Engine(
                 seq_size=seq_size,
                 horizon=horizon,
@@ -236,7 +236,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 dataset_type=dataset_type,
                 len_test_dataloader=len(test_loaders[0])
             )
-        elif model_type == cst.ModelType.TRANSFORMER:
+        elif model_type == cst.ModelType.TLOB:
             model = Engine(
                 seq_size=seq_size,
                 horizon=horizon,

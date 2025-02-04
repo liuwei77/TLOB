@@ -40,6 +40,7 @@ class Engine(LightningModule):
     ):
         super().__init__()
         self.seq_size = seq_size
+        self.dataset_type = dataset_type
         self.horizon = horizon
         self.max_epochs = max_epochs
         self.model_type = model_type
@@ -259,8 +260,8 @@ class Engine(LightningModule):
         plt.ylabel('Precision')
         plt.title('Precision-Recall Curve')
         if is_wandb:
-            wandb.log({"precision_recall_curve": wandb.Image(plt)})
-        plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +"precision_recall_curve.svg")
+            wandb.log({f"precision_recall_curve_{self.dataset_type}": wandb.Image(plt)})
+        plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +f"precision_recall_curve_{self.dataset_type}.svg")
         plt.show()
         plt.close()
         
