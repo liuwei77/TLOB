@@ -1,17 +1,16 @@
 import random
+import warnings
+warnings.filterwarnings("ignore")
 import numpy as np
 import torchvision
 import wandb
 import torch
+torchvision.disable_beta_transforms_warning()
 import constants as cst
-import warnings
 import hydra
 from config.config import Config
 from run import run_wandb, run, sweep_init
 from preprocessing.lobster import LOBSTERDataBuilder
-warnings.filterwarnings("ignore")
-torch.autograd.set_detect_anomaly(True)
-torchvision.disable_beta_transforms_warning()
 
 @hydra.main(config_path="config", config_name="config")
 def hydra_app(config: Config):

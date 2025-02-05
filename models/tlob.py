@@ -80,11 +80,11 @@ class TLOB(nn.Module):
         
         for i in range(num_layers):
             if i != num_layers-1:
-                self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim))
-                #self.layers.append(TransformerLayer(seq_size, num_heads, seq_size))
+                #self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim))
+                self.layers.append(TransformerLayer(seq_size, num_heads, seq_size))
             else:
-                self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim//4))
-                #self.layers.append(TransformerLayer(seq_size, num_heads, seq_size//4))
+                #self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim//4))
+                self.layers.append(TransformerLayer(seq_size, num_heads, seq_size//4))
         self.att_temporal = []
         self.att_feature = []
         self.mean_att_distance_temporal = []
@@ -115,6 +115,7 @@ class TLOB(nn.Module):
         att_max_feature = np.zeros((self.num_layers-1, 2, self.num_heads, self.hidden_dim))
         att_temporal = np.zeros((self.num_layers, self.num_heads, self.seq_size, self.seq_size))
         att_feature = np.zeros((self.num_layers-1, self.num_heads, self.hidden_dim, self.hidden_dim))
+        x = x.permute(0, 2, 1)
         for i in range(len(self.layers)):
             x, att = self.layers[i](x)
             att = att.detach()
