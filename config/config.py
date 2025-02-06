@@ -13,14 +13,14 @@ class Model:
     
 @dataclass
 class MLPLOB(Model):
-    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 46, "lr": 0.0003, "seq_size": 384, "all_features": True})
+    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 144, "lr": 0.0003, "seq_size": 384, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [3, 6], "hidden_dim": [128], "lr": [0.0003], "seq_size": [384]})
     type: ModelType = ModelType.MLPLOB
     
     
 @dataclass
 class TLOB(Model):
-    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 8, "hidden_dim": 46, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
+    hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 4, "hidden_dim": 144, "num_heads": 1, "is_sin_emb": True, "lr": 0.0001, "seq_size": 128, "all_features": True})
     hyperparameters_sweep: dict = field(default_factory=lambda: {"num_layers": [4, 6], "hidden_dim": [128, 256], "num_heads": [1], "is_sin_emb": [True], "lr": [0.0001], "seq_size": [128]})
     type: ModelType = ModelType.TLOB
     
@@ -39,12 +39,12 @@ class DeepLOB(Model):
 @dataclass
 class Experiment:
     is_data_preprocessed: bool = True
-    is_wandb: bool = True
+    is_wandb: bool = False
     is_sweep: bool = False
     type: list = field(default_factory=lambda: ["TRAINING"])
     is_debug: bool = False
     checkpoint_reference: str = "data/checkpoints/"
-    dataset_type: Dataset = Dataset.LOBSTER
+    dataset_type: Dataset = Dataset.FI_2010
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
     sampling_quantity: int = 500

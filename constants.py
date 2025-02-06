@@ -47,7 +47,7 @@ INTC_EVENT_STD_DEPTH = 2.333747222206966
 
 
 
-LOBSTER_HORIZONS = [10, 20, 50, 100, 200]
+LOBSTER_HORIZONS = [10, 20, 50, 100]
 PRECISION = 32
 N_LOB_LEVELS = 10
 LEN_LEVEL = 4
@@ -60,5 +60,5 @@ DIR_EXPERIMENTS = "data/experiments"
 DIR_SAVED_MODEL = "data/checkpoints"
 DATA_DIR = "data"
 RECON_DIR = "data/reconstructions"
-PROJECT_NAME = "LOBForecasting4"
+PROJECT_NAME = ""
 SPLIT_RATES = [0.8, 0.1, 0.1]

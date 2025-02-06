@@ -37,7 +37,7 @@ def hydra_app(config: Config):
     if config.experiment.is_wandb:
         if config.experiment.is_sweep:
             sweep_config = sweep_init(config)
-            sweep_id = wandb.sweep(sweep_config, project=cst.PROJECT_NAME, entity="leonardo-berti07")
+            sweep_id = wandb.sweep(sweep_config, project=cst.PROJECT_NAME, entity="")
             wandb.agent(sweep_id, run_wandb(config, accelerator), count=sweep_config["run_cap"])
         else:
             start_wandb = run_wandb(config, accelerator)
