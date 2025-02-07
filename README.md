@@ -1,14 +1,19 @@
-# Title of the paper
-This is the official repository for the paper ...
+# TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data
+This is the official repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
 
-# Abstract
-...
+## Abstract
+Stock Price Trend Prediction (SPTP) based on Limit Order Book (LOB) data is a fundamental challenge in financial markets. Despite advances in deep learning, existing models fail to generalize across different market conditions and struggle to reliably predict short-term trends.  Surprisingly, by adapting a simple MLP-based architecture to LOB, we show that we surpass SoTA performance; thus, challenging the necessity of complex architectures. Unlike past work that shows robustness issues, we propose TLOB, a transformer-based model that uses a dual attention mechanism to capture spatial and temporal dependencies in LOB data. This allows it to adaptively focus on the market microstructure, making it particularly effective for longer-horizon predictions and volatile market conditions.
+We also introduce a new labeling method that improves on previous ones, removing the horizon bias.
+To assess TLOB's effectiveness, we evaluate it on the well-known FI-2010 benchmark (F1 of 92.8\%) and on Tesla (+2.67\% on F1) and Intel (+14.16\% on F1). 
+Additionally, we empirically show how stock price predictability has declined over time (-6.68 absolute points in F1), highlighting the growing market efficiencies. 
+Predictability must be considered in relation to transaction costs, so we experimented with defining trends using an average spread, reflecting the primary transaction cost. The resulting performance deterioration underscores the complexity of translating trend classification into profitable trading strategies.
+We argue that our work provides new insights into the evolving landscape of stock price trend prediction and sets a strong foundation for future advancements in financial AI. 
 
 # Getting Started 
 These instructions will get you a copy of the project up and running on your local machine for development and reproducibility purposes.
 
 ## Prerequisities
-This project requires Python and Conda. If you don't have them installed, please do so first. It is possible to do it using pip, but in that case, you are on your own.   
+This project requires Python and pip. If you don't have them installed, please do so first. It is possible to do it using conda, but in that case, you are on your own.   
 
 ## Installing
 To set up the environment for this project, follow these steps:
@@ -18,13 +23,17 @@ To set up the environment for this project, follow these steps:
 git clone <repository_url>
 ```
 2. Navigate to the project directory
-3. Create a new Conda environment using the environment.yml file:
+3. Create a virtual environment:
 ```sh
-conda env create -f environment.yml
+python -m venv env
 ```
 4. Activate the new Conda environment:
 ```sh
-conda activate deepmarket
+env\Scripts\activate
+```
+5. Download the necessary packages:
+```sh
+pip install -r requirements.txt
 ```
 
 # Training
@@ -44,6 +53,13 @@ Otherwise, if you want to train and test the model with the Benchmark dataset FI
 5. Finally, inside the config file, you need to set Dataset to FI-2010 and set the horizons to 1, 2, 5, or 10. 
 Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
 
+## Training a TLOB, MLPLOB, DeepLOB or BiNCTABL Model 
+To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to run this command:
+```sh
+python main.py +model={model_name} hydra.job.chdir=False
+```
+you can see all the model names in the config file. 
+
 ## Implementing and Training a new model 
 To train a new model, follow these steps:
 1. Implement your model class in the models/ directory. Your model class will take in input an input of dimension [batch_size, seq_len, num_features], and should output a tensor of dimension [batch_size, 3].
@@ -60,9 +76,4 @@ python main.py +model={your_model_name} hydra.job.chdir=False
 Optionally you can also log the run with wandb or run a sweep, changing the config experiment options.
 
 
-## Training a TLOB, MLPLOB, DeepLOB or BiNCTABL Model 
-To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to run this command:
-```sh
-python main.py +model={model_name} hydra.job.chdir=False
-```
-you can see all the model names in the config file. 
+

@@ -1,3 +1,4 @@
+from typing import List
 from hydra.core.config_store import ConfigStore
 from dataclasses import dataclass, field
 from constants import Dataset, ModelType
@@ -10,7 +11,7 @@ class Model:
     hyperparameters_sweep: dict = MISSING
     type: ModelType = MISSING
     
-    
+
 @dataclass
 class MLPLOB(Model):
     hyperparameters_fixed: dict = field(default_factory=lambda: {"num_layers": 3, "hidden_dim": 144, "lr": 0.0003, "seq_size": 384, "all_features": True})
@@ -60,13 +61,18 @@ class Experiment:
     filename_ckpt: str = "model.ckpt"
     optimizer: str = "Adam"
     
-    
+defaults = [Model, Experiment]
+
 @dataclass
 class Config:
     model: Model
     experiment: Experiment = field(default_factory=Experiment)
-
-
+    defaults: List = field(default_factory=lambda: [
+        {"hydra/job_logging": "disabled"},
+        {"hydra/hydra_logging": "disabled"},
+        "_self_"
+    ])
+    
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
 cs.store(group="model", name="mlplob", node=MLPLOB)

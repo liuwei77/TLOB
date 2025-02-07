@@ -11,6 +11,8 @@ import hydra
 from config.config import Config
 from run import run_wandb, run, sweep_init
 from preprocessing.lobster import LOBSTERDataBuilder
+from constants import Dataset
+from config.config import MLPLOB, TLOB
 
 @hydra.main(config_path="config", config_name="config")
 def hydra_app(config: Config):
@@ -19,6 +21,14 @@ def hydra_app(config: Config):
         accelerator = "cpu"
     else:
         accelerator = "gpu"
+    if config.experiment.dataset_type == Dataset.FI_2010:
+        config.experiment.batch_size = 32
+        if config.model.type.value == "MLPLOB" or config.model.type.value == "TLOB":
+            config.model.hyperparameters_fixed["hidden_dim"] = 144
+    else:
+        config.experiment.batch_size = 128 
+        if config.model.type.value == "MLPLOB" or config.model.type.value == "TLOB":
+            config.model.hyperparameters_fixed["hidden_dim"] = 46
 
     if config.experiment.dataset_type.value == "LOBSTER" and not config.experiment.is_data_preprocessed:
         # prepare the datasets, this will save train.npy, val.npy and test.npy in the data directory

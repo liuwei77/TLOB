@@ -6,7 +6,6 @@ import wandb
 from torch.utils.data import DataLoader
 from lightning.pytorch.callbacks import TQDMProgressBar
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-from omegaconf import OmegaConf
 from config.config import Config
 from models.engine import Engine
 from preprocessing.fi_2010 import fi_2010_load
@@ -293,7 +292,11 @@ def train(config: Config, trainer: L.Trainer, run=None):
         trainer.fit(model, train_dataloader, val_dataloader)
         best_model_path = model.last_path_ckpt
         print("Best model path: ", best_model_path) 
-        best_model = Engine.load_from_checkpoint(best_model_path, map_location=cst.DEVICE)
+        try:
+            best_model = Engine.load_from_checkpoint(best_model_path, map_location=cst.DEVICE)
+        except: 
+            print("no checkpoints has been saved, selecting the last model")
+            best_model = model
         best_model.experiment_type = "EVALUATION"
         for i in range(len(test_loaders)):
             test_dataloader = test_loaders[i]
