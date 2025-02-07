@@ -70,6 +70,7 @@ class Config:
     defaults: List = field(default_factory=lambda: [
         {"hydra/job_logging": "disabled"},
         {"hydra/hydra_logging": "disabled"},
+        {"hydra/job/chdir": "False"},
         "_self_"
     ])
     

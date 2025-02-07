@@ -42,7 +42,6 @@ def hydra_app(config: Config):
             sampling_quantity=config.experiment.sampling_quantity,
         )
         data_builder.prepare_save_datasets()
-        exit()
         
     if config.experiment.is_wandb:
         if config.experiment.is_sweep:
