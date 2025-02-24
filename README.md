@@ -78,7 +78,7 @@ Optionally you can also log the run with wandb or run a sweep, changing the conf
 
 # Results
 MLPLOB and TLOB outperform all the other SoTA deep learning models for Stock Price Trend Prediction with LOB data for both datasets, FI-2010 benchmark and TSLA-INTC.
-![FI-2010 results](https://github.com/LeonardoBerti00/TLOB/blob/main/fi-2010.png)
+![FI-2010 results](https://github.com/LeonardoBerti00/TLOB/blob/main/fI-2010.png)
 ![TSLA and INTC results](https://github.com/LeonardoBerti00/TLOB/blob/main/tslaintc.png)
 
 
