@@ -21,7 +21,7 @@ To set up the environment for this project, follow these steps:
 
 1. Clone the repository:
 ```sh
-git clone <repository_url>
+git clone https://github.com/LeonardoBerti00/TLOB.git
 ```
 2. Navigate to the project directory
 3. Create a virtual environment:
