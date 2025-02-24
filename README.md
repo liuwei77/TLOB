@@ -1,5 +1,6 @@
 # TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data
 This is the official repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
+![TLOB Architecture](https://github.com/LeonardoBerti00/TLOB/blob/main/Architecture.png)
 
 ## Abstract
 Stock Price Trend Prediction (SPTP) based on Limit Order Book (LOB) data is a fundamental challenge in financial markets. Despite advances in deep learning, existing models fail to generalize across different market conditions and struggle to reliably predict short-term trends.  Surprisingly, by adapting a simple MLP-based architecture to LOB, we show that we surpass SoTA performance; thus, challenging the necessity of complex architectures. Unlike past work that shows robustness issues, we propose TLOB, a transformer-based model that uses a dual attention mechanism to capture spatial and temporal dependencies in LOB data. This allows it to adaptively focus on the market microstructure, making it particularly effective for longer-horizon predictions and volatile market conditions.
@@ -74,6 +75,11 @@ python main.py +model={your_model_name} hydra.job.chdir=False
 7. A checkpoint will be saved in data/checkpoints/ 
 
 Optionally you can also log the run with wandb or run a sweep, changing the config experiment options.
+
+# Results
+MLPLOB and TLOB outperform all the other SoTA deep learning models for Stock Price Trend Prediction with LOB data for both datasets, FI-2010 benchmark and TSLA-INTC.
+![FI-2010 results](https://github.com/LeonardoBerti00/TLOB/blob/main/fi-2010.png)
+![TSLA and INTC results](https://github.com/LeonardoBerti00/TLOB/blob/main/tslaintc.png)
 
 
 
