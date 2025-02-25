@@ -81,5 +81,15 @@ MLPLOB and TLOB outperform all the other SoTA deep learning models for Stock Pri
 ![FI-2010 results](https://github.com/LeonardoBerti00/TLOB/blob/main/fI-2010.png)
 ![TSLA and INTC results](https://github.com/LeonardoBerti00/TLOB/blob/main/tslaintc.png)
 
-
-
+# Citation
+```sh
+@misc{berti2025tlobnoveltransformermodel,
+      title={TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data}, 
+      author={Leonardo Berti and Gjergji Kasneci},
+      year={2025},
+      eprint={2502.15757},
+      archivePrefix={arXiv},
+      primaryClass={q-fin.ST},
+      url={https://arxiv.org/abs/2502.15757}, 
+}
+```
