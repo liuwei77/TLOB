@@ -33,8 +33,23 @@ env\Scripts\activate
 pip install -r requirements.txt
 ```
 
+# Reproduce the results
+To reproduce the results follow the following steps:
+
+1. Download the dataset from the [official website](https://etsin.fairdata.fi/dataset/73eb48d7-4dbc-4a10-a52a-da745b47a649/data).
+2. Unzip the data 
+3. Create a folder FI-2010 inside your repository
+4. Copy these four files in the folder: "Test_Dst_NoAuction_ZScore_CF_7.txt", "Test_Dst_NoAuction_ZScore_CF_8.txt", "Test_Dst_NoAuction_ZScore_CF_9", "Train_Dst_NoAuction_ZScore_CF_7.txt" you can delete the other files.
+5. In data/checkpoints/TLOB/HuggingFace/ you can find the four checkpoint for FI-2010, the checkpoints for TSLA and INTC did not fit in the free GitHub repository size. If you need also the other checkpoints you can contact me. 
+6. Finally, inside the config file, you need to set Dataset to FI-2010, set the horizons to 1, 2, 5, or 10, then set the checkpoint_reference variable to the path of the checkpoint with the same horizon, finally set the type to EVALUATION. 
+7. Now run:
+```sh
+python main.py +model=tlob hydra.job.chdir=False
+```
+Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
+
 # Training
-If your objective is to train a TLOB or MLPLOB model or implement your model you should follow those steps. 
+If your objective is to train a TLOB or MLPLOB model or implement your model you should follow those steps.
 
 ## Data 
 If you have some LOBSTER data you can follow those steps:
@@ -51,14 +66,14 @@ Otherwise, if you want to train and test the model with the Benchmark dataset FI
 Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
 
 ## Training a TLOB, MLPLOB, DeepLOB or BiNCTABL Model 
-To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to run this command:
+To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to set the type variable in the config file to TRAINING, then run this command:
 ```sh
 python main.py +model={model_name} hydra.job.chdir=False
 ```
 you can see all the model names in the config file. 
 
 ## Implementing and Training a new model 
-To train a new model, follow these steps:
+To implement a new model, follow these steps:
 1. Implement your model class in the models/ directory. Your model class will take in input an input of dimension [batch_size, seq_len, num_features], and should output a tensor of dimension [batch_size, 3].
 2. add your model to pick_model in utils_models.
 3. Update the config file to include your model and its hyperparameters. If you are using the FI-2010 dataset, It is suggested to set the hidden dim to 40 and the hp all_features to false if you want to use only the LOB as input or if you want to use the LOB and market features the hidden dim should be 144 and all features true. If you are using LOBSTER data, it is suggested to set the hidden dim to 46 and all features to true to use LOB and orders, while if you want to use only the LOB set all features to False. 

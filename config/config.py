@@ -42,7 +42,7 @@ class Experiment:
     is_data_preprocessed: bool = True
     is_wandb: bool = False
     is_sweep: bool = False
-    type: list = field(default_factory=lambda: ["TRAINING"])
+    type: list = field(default_factory=lambda: ["EVALUATION"])
     is_debug: bool = False
     checkpoint_reference: str = "data/checkpoints/TLOB/val_loss=0.188_epoch=4_FI-2010_seq_size_128_horizon_10_nu_4_hi_144_nu_1_is_True_lr_0.0001_se_128_al_True_ty_TLOB_seed_42.ckpt"
     dataset_type: Dataset = Dataset.FI_2010
