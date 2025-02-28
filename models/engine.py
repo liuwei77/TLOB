@@ -262,7 +262,7 @@ class Engine(LightningModule):
         if is_wandb:
             wandb.log({f"precision_recall_curve_{self.dataset_type}": wandb.Image(plt)})
         plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +f"precision_recall_curve_{self.dataset_type}.svg")
-        plt.show()
+        #plt.show()
         plt.close()
         
 def compute_most_attended(att_feature):

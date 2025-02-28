@@ -8,5 +8,5 @@ data/I*
 data/T*
 data/F*
 preprocessing
-data
 env
+data/checkpoints/TLOB/v*
