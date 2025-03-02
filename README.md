@@ -1,6 +1,5 @@
 # TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data
 This is the official repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
-![TLOB Architecture](https://github.com/LeonardoBerti00/TLOB/blob/main/Architecture.png)
 
 ## Abstract
 Stock Price Trend Prediction (SPTP) based on Limit Order Book
@@ -15,10 +14,7 @@ This project requires Python and pip. If you don't have them installed, please d
 ## Installing
 To set up the environment for this project, follow these steps:
 
-1. Clone the repository:
-```sh
-git clone https://github.com/LeonardoBerti00/TLOB.git
-```
+1. Clone the repository
 2. Navigate to the project directory
 3. Create a virtual environment:
 ```sh
@@ -79,18 +75,5 @@ Optionally you can also log the run with wandb or run a sweep, changing the conf
 
 # Results
 MLPLOB and TLOB outperform all the other SoTA deep learning models for Stock Price Trend Prediction with LOB data for both datasets, FI-2010 benchmark and TSLA-INTC.
-![FI-2010 results](https://github.com/LeonardoBerti00/TLOB/blob/main/fI-2010.png)
-![TSLA and INTC results](https://github.com/LeonardoBerti00/TLOB/blob/main/tslaintc.png)
 
-# Citation
-```sh
-@misc{berti2025tlobnoveltransformermodel,
-      title={TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data}, 
-      author={Leonardo Berti and Gjergji Kasneci},
-      year={2025},
-      eprint={2502.15757},
-      archivePrefix={arXiv},
-      primaryClass={q-fin.ST},
-      url={https://arxiv.org/abs/2502.15757}, 
-}
-```
+
