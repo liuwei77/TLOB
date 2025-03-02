@@ -39,19 +39,19 @@ class DeepLOB(Model):
     
 @dataclass
 class Experiment:
-    is_data_preprocessed: bool = True
+    is_data_preprocessed: bool = False
     is_wandb: bool = False
     is_sweep: bool = False
     type: list = field(default_factory=lambda: ["EVALUATION"])
     is_debug: bool = False
-    checkpoint_reference: str = "data/checkpoints/TLOB/val_loss=0.188_epoch=4_FI-2010_seq_size_128_horizon_10_nu_4_hi_144_nu_1_is_True_lr_0.0001_se_128_al_True_ty_TLOB_seed_42.ckpt"
+    checkpoint_reference: str = ""
     dataset_type: Dataset = Dataset.FI_2010
     sampling_type: str = "quantity"    #time or quantity
     sampling_time: str = ""   #seconds
     sampling_quantity: int = 500
     training_stocks: list = field(default_factory=lambda: ["INTC"])
     testing_stocks: list = field(default_factory=lambda: ["INTC"])
-    seed: int = 22
+    seed: int = 42
     horizon: int = 5
     max_epochs: int = 10
     if dataset_type == Dataset.FI_2010:

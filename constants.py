@@ -3,7 +3,7 @@ from enum import Enum
 
 class Dataset(Enum):
     LOBSTER = "LOBSTER"
-    FI_2010 = "FI-2010"
+    FI_2010 = "FI_2010"
     
 
 class ModelType(Enum):

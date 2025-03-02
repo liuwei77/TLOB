@@ -1,5 +1,9 @@
+import os
 import random
 import warnings
+
+import urllib
+import zipfile
 warnings.filterwarnings("ignore")
 import numpy as np
 import torchvision
@@ -43,6 +47,19 @@ def hydra_app(config: Config):
         )
         data_builder.prepare_save_datasets()
         
+    elif config.experiment.dataset_type.value == "FI_2010" and not config.experiment.is_data_preprocessed:
+        try:
+            #take the .zip files name in data/FI_2010
+            dir = cst.DATA_DIR + "/FI_2010/"
+            for filename in os.listdir(dir):
+                if filename.endswith(".zip"):
+                    filename = dir + filename
+                    with zipfile.ZipFile(filename, 'r') as zip_ref:
+                        zip_ref.extractall(dir)  # Extracts to the current directory           
+            print("Data extracted.")
+        except Exception as e:
+            raise(f"Error downloading or extracting data: {e}")
+        exit() 
     if config.experiment.is_wandb:
         if config.experiment.is_sweep:
             sweep_config = sweep_init(config)

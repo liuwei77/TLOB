@@ -36,13 +36,9 @@ pip install -r requirements.txt
 # Reproduce the results
 To reproduce the results follow the following steps:
 
-1. Download the dataset from the [official website](https://etsin.fairdata.fi/dataset/73eb48d7-4dbc-4a10-a52a-da745b47a649/data).
-2. Unzip the data 
-3. Create a folder FI-2010 inside your repository
-4. Copy these four files in the folder: "Test_Dst_NoAuction_ZScore_CF_7.txt", "Test_Dst_NoAuction_ZScore_CF_8.txt", "Test_Dst_NoAuction_ZScore_CF_9", "Train_Dst_NoAuction_ZScore_CF_7.txt" you can delete the other files.
-5. In data/checkpoints/TLOB/HuggingFace/ you can find the four checkpoint for FI-2010, the checkpoints for TSLA and INTC did not fit in the free GitHub repository size. If you need also the other checkpoints you can contact me. 
-6. Finally, inside the config file, you need to set Dataset to FI-2010, set the horizons to 1, 2, 5, or 10, then set the checkpoint_reference variable to the path of the checkpoint with the same horizon, finally set the type to EVALUATION. 
-7. Now run:
+1. In data/checkpoints/TLOB/HuggingFace/ you can find the four checkpoint for FI-2010, the checkpoints for TSLA and INTC did not fit in the free GitHub repository size. If you need also the other checkpoints you can contact me. 
+2. Inside the config file, you need to set Dataset to FI-2010, set the horizons to 1, 2, 5, or 10 finally set the experiment type to EVALUATION. Everything should already be set.
+3. Now run:
 ```sh
 python main.py +model=tlob hydra.job.chdir=False
 ```
@@ -57,13 +53,7 @@ If you have some LOBSTER data you can follow those steps:
 2. Inside the config file, you need to set the name of the training stock and the testing stocks, and also the dataset to LOBSTER. Currently you can add only one for the training but several for testing. 
 3. You need to start the pre-processing step, to do so set config.is_data_preprocessed to False and run python main.py
 
-Otherwise, if you want to train and test the model with the Benchmark dataset FI-2010 you can follow these steps:
-1. Download the dataset from the [official website](https://etsin.fairdata.fi/dataset/73eb48d7-4dbc-4a10-a52a-da745b47a649/data).
-2. Unzip the data 
-3. Create a folder FI-2010 inside your repository
-4. Copy these four files in the folder: "Test_Dst_NoAuction_ZScore_CF_7.txt", "Test_Dst_NoAuction_ZScore_CF_8.txt", "Test_Dst_NoAuction_ZScore_CF_9", "Train_Dst_NoAuction_ZScore_CF_7.txt" you can delete the other files.
-5. Finally, inside the config file, you need to set Dataset to FI-2010 and set the horizons to 1, 2, 5, or 10. 
-Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
+Otherwise, if you want to train and test the model with the Benchmark dataset FI-2010 you need, inside the config file, set Dataset to FI-2010 and set the horizons to 1, 2, 5, or 10, and the experiment type to TRAINING. Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
 
 ## Training a TLOB, MLPLOB, DeepLOB or BiNCTABL Model 
 To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to set the type variable in the config file to TRAINING, then run this command:

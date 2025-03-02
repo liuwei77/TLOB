@@ -1,7 +1,11 @@
+import zipfile
 import lightning as L
 import omegaconf
 import torch
+import glob
+import os
 from lightning.pytorch.loggers import WandbLogger
+import urllib
 import wandb
 from torch.utils.data import DataLoader
 from lightning.pytorch.callbacks import TQDMProgressBar
@@ -132,14 +136,27 @@ def train(config: Config, trainer: L.Trainer, run=None):
         
     experiment_type = config.experiment.type
     if "FINETUNING" in experiment_type or "EVALUATION" in experiment_type:
-        checkpoint = torch.load(config.experiment.checkpoint_reference, map_location=cst.DEVICE)
+        checkpoint = config.experiment.checkpoint_reference
+        if checkpoint != "":
+            checkpoint = torch.load(config.experiment.checkpoint_reference, map_location=cst.DEVICE)
+        else:
+            # Find best checkpoint matching model type and horizon
+            model_type_str = config.model.type.value
+            checkpoints_dir = f"data/checkpoints/{model_type_str.upper()}/HuggingFace/"
+            horizon_str = str(config.experiment.horizon)
+            
+            # Find all matching checkpoint files
+            checkpoint_name = f"FI-2010_horizon_{horizon_str}_{model_type_str.upper()}_seed_{config.experiment.seed}.ckpt"            
+            checkpoint = torch.load(checkpoints_dir + checkpoint_name, map_location=cst.DEVICE)
+            print(f"Selected checkpoint: {config.experiment.checkpoint_reference}")
+            
         print("Loading model from checkpoint: ", config.experiment.checkpoint_reference) 
         lr = checkpoint["hyper_parameters"]["lr"]
         filename_ckpt = checkpoint["hyper_parameters"]["filename_ckpt"]
         hidden_dim = checkpoint["hyper_parameters"]["hidden_dim"]
         num_layers = checkpoint["hyper_parameters"]["num_layers"]
         optimizer = checkpoint["hyper_parameters"]["optimizer"]
-        model_type = checkpoint["hyper_parameters"]["model_type"]#.value
+        model_type = checkpoint["hyper_parameters"]["model_type"]
         max_epochs = checkpoint["hyper_parameters"]["max_epochs"]
         horizon = checkpoint["hyper_parameters"]["horizon"]
         seq_size = checkpoint["hyper_parameters"]["seq_size"]
@@ -431,4 +448,3 @@ def print_setup(config: Config):
         print("Training stocks: ", config.experiment.training_stocks)
         print("Testing stocks: ", config.experiment.testing_stocks)
 
-    

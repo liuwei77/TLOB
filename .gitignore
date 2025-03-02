@@ -6,7 +6,7 @@ lightning_logs
 data/d*
 data/I*
 data/T*
-data/F*
+data/FI_2010/*.txt
 preprocessing
 env
 data/checkpoints/TLOB/v*
