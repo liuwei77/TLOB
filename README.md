@@ -36,12 +36,13 @@ pip install -r requirements.txt
 # Reproduce the results
 To reproduce the results follow the following steps:
 
-1. In data/checkpoints/TLOB/HuggingFace/ you can find the four checkpoint for FI-2010, the checkpoints for TSLA and INTC did not fit in the free GitHub repository size. If you need also the other checkpoints you can contact me. 
+1. In data/checkpoints/TLOB/HuggingFace/ you can find the four checkpoints for FI-2010, the checkpoints for TSLA and INTC did not fit in the free GitHub repository size. If you need also the other checkpoints you can contact me. 
 2. Inside the config file, you need to set Dataset to FI-2010, set the horizons to 1, 2, 5, or 10 finally set the experiment type to EVALUATION. Everything should already be set.
 3. Now run:
 ```sh
 python main.py +model=tlob hydra.job.chdir=False
 ```
+After doing the first run, both for training or reproducing, you can set config.Experiment.is_data_preprocessed to True.
 Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
 
 # Training
@@ -53,7 +54,8 @@ If you have some LOBSTER data you can follow those steps:
 2. Inside the config file, you need to set the name of the training stock and the testing stocks, and also the dataset to LOBSTER. Currently you can add only one for the training but several for testing. 
 3. You need to start the pre-processing step, to do so set config.is_data_preprocessed to False and run python main.py
 
-Otherwise, if you want to train and test the model with the Benchmark dataset FI-2010 you need, inside the config file, set Dataset to FI-2010 and set the horizons to 1, 2, 5, or 10, and the experiment type to TRAINING. Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
+Otherwise, if you want to train and test the model with the Benchmark dataset FI-2010 you need, inside the config file, set Dataset to FI-2010 and set the horizons to 1, 2, 5, or 10, and the experiment type to TRAINING. Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. After doing the first run, both for training or reproducing, you can set config.Experiment.is_data_preprocessed to True.
+
 
 ## Training a TLOB, MLPLOB, DeepLOB or BiNCTABL Model 
 To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to set the type variable in the config file to TRAINING, then run this command:
