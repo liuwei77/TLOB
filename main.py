@@ -59,7 +59,6 @@ def hydra_app(config: Config):
             print("Data extracted.")
         except Exception as e:
             raise(f"Error downloading or extracting data: {e}")
-        exit() 
     if config.experiment.is_wandb:
         if config.experiment.is_sweep:
             sweep_config = sweep_init(config)
