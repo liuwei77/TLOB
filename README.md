@@ -24,7 +24,7 @@ git clone https://github.com/LeonardoBerti00/TLOB.git
 ```sh
 python -m venv env
 ```
-4. Activate the new Conda environment:
+4. Activate the new pip environment:
 ```sh
 env\Scripts\activate
 ```
