@@ -10,7 +10,7 @@ Stock Price Trend Prediction (SPTP) based on Limit Order Book
 These instructions will get you a copy of the project up and running on your local machine for development and reproducibility purposes.
 
 ## Prerequisities
-This project requires Python and pip. If you don't have them installed, please do so first. It is possible to do it using conda, but in that case, you are on your own.   
+This project requires Python and pip. If you don't have them installed, please do so first. It is possible to do it using conda, but in that case, you are on your own. You can use both windows and linux, but to use linux you need to change...  
 
 ## Installing
 To set up the environment for this project, follow these steps:
@@ -24,9 +24,13 @@ git clone https://github.com/LeonardoBerti00/TLOB.git
 ```sh
 python -m venv env
 ```
-4. Activate the new pip environment:
+4. Activate the new pip environment in windows:
 ```sh
 env\Scripts\activate
+```
+or in linux:
+```sh
+source env/Scripts/activate
 ```
 5. Download the necessary packages:
 ```sh

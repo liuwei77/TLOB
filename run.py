@@ -65,7 +65,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
     training_stocks = config.experiment.training_stocks
     testing_stocks = config.experiment.testing_stocks
     dataset_type = config.experiment.dataset_type.value
-    if dataset_type == "FI-2010":
+    if dataset_type == "FI_2010":
         path = cst.DATA_DIR + "/FI_2010"
         train_input, train_labels, val_input, val_labels, test_input, test_labels = fi_2010_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
         data_module = DataModule(
@@ -138,7 +138,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
     if "FINETUNING" in experiment_type or "EVALUATION" in experiment_type:
         checkpoint = config.experiment.checkpoint_reference
         if checkpoint != "":
-            checkpoint = torch.load(config.experiment.checkpoint_reference, map_location=cst.DEVICE)
+            checkpoint = torch.load(config.experiment.checkpoint_reference, map_location=cst.DEVICE, weights_only=False)
         else:
             # Find best checkpoint matching model type and horizon
             model_type_str = config.model.type.value
@@ -147,8 +147,9 @@ def train(config: Config, trainer: L.Trainer, run=None):
             
             # Find all matching checkpoint files
             checkpoint_name = f"FI-2010_horizon_{horizon_str}_{model_type_str.upper()}_seed_{config.experiment.seed}.ckpt"            
-            checkpoint = torch.load(checkpoints_dir + checkpoint_name, map_location=cst.DEVICE)
-            print(f"Selected checkpoint: {config.experiment.checkpoint_reference}")
+            print("Looking for checkpoint: ", checkpoints_dir + checkpoint_name)
+            checkpoint = torch.load(checkpoints_dir + checkpoint_name, map_location=cst.DEVICE, weights_only=False)
+            print(f"Selected checkpoint: {checkpoints_dir + checkpoint_name}")
             
         print("Loading model from checkpoint: ", config.experiment.checkpoint_reference) 
         lr = checkpoint["hyper_parameters"]["lr"]
@@ -320,7 +321,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
             output = trainer.test(best_model, test_dataloader)
             if run is not None and dataset_type == "LOBSTER":
                 run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
-            elif run is not None and dataset_type == "FI-2010":
+            elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI-2010 ": output[0]["f1_score"]}, commit=False)
     else:
         for i in range(len(test_loaders)):
@@ -328,7 +329,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
             output = trainer.test(model, test_dataloader)
             if run is not None and dataset_type == "LOBSTER":
                 run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
-            elif run is not None and dataset_type == "FI-2010":
+            elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI-2010 ": output[0]["f1_score"]}, commit=False)
             
     
