@@ -11,9 +11,9 @@ Requests
 scikit_learn
 scipy
 seaborn
-torch
+torch --index-url https://download.pytorch.org/whl/cu118
+torchvision --index-url https://download.pytorch.org/whl/cu118
 torch_ema
-torchvision
 transformers
 wandb
 

@@ -146,10 +146,12 @@ def train(config: Config, trainer: L.Trainer, run=None):
             horizon_str = str(config.experiment.horizon)
             
             # Find all matching checkpoint files
-            checkpoint_name = f"FI-2010_horizon_{horizon_str}_{model_type_str.upper()}_seed_{config.experiment.seed}.ckpt"            
-            print("Looking for checkpoint: ", checkpoints_dir + checkpoint_name)
-            checkpoint = torch.load(checkpoints_dir + checkpoint_name, map_location=cst.DEVICE, weights_only=False)
-            print(f"Selected checkpoint: {checkpoints_dir + checkpoint_name}")
+            checkpoint_name = f"FI-2010_horizon_{horizon_str}_{model_type_str.upper()}_seed_{config.experiment.seed}.ckpt"
+            checkpoint_path = checkpoints_dir + checkpoint_name
+            checkpoint = torch.load(checkpoint_path, map_location=cst.DEVICE, weights_only=False)
+            print(f"Selected checkpoint: {checkpoint_path}")
+            # Update the checkpoint reference with the actual path
+            config.experiment.checkpoint_reference = checkpoint_path
             
         print("Loading model from checkpoint: ", config.experiment.checkpoint_reference) 
         lr = checkpoint["hyper_parameters"]["lr"]
