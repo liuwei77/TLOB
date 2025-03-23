@@ -1,5 +1,5 @@
 # TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data
-This is the official repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
+This is the official repository for the paper [TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data](https://arxiv.org/pdf/2502.15757).
 ![TLOB Architecture](https://github.com/LeonardoBerti00/TLOB/blob/main/Architecture.png)
 
 ## Abstract
