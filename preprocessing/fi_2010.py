@@ -14,15 +14,15 @@ def fi_2010_load(path, seq_size, horizon, all_features):
     dec_test3 = np.loadtxt(path + '/Test_Dst_NoAuction_ZScore_CF_9.txt')
     full_test = np.hstack((dec_test1, dec_test2, dec_test3))
     
-    if horizon == 1:
+    if horizon == 10:
         tmp = 5
-    elif horizon == 2:
+    elif horizon == 20:
         tmp = 4
-    elif horizon == 3:
+    elif horizon == 30:
         tmp = 3
-    elif horizon == 5:
+    elif horizon == 50:
         tmp = 2
-    elif horizon == 10:
+    elif horizon == 100:
         tmp = 1
     else:
         raise ValueError("Horizon not found")

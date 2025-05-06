@@ -54,7 +54,6 @@ class BiN(nn.Module):
         std = torch.reshape(std, (std.shape[0], std.shape[1], 1))
         # it can be possible that the std of some temporal slices is 0, and this produces inf values, so we have to set them to one
         std[std < 1e-4] = 1
-
         diff = x - (x2 @ (T2.T))
         Z2 = diff / (std @ (T2.T))
 

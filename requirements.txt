@@ -1,3 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cu121
+
 einops
 hydra-core
 lightning
@@ -11,9 +13,10 @@ Requests
 scikit_learn
 scipy
 seaborn
-torch --index-url https://download.pytorch.org/whl/cu118
-torchvision --index-url https://download.pytorch.org/whl/cu118
+torch==2.5.0+cu121
 torch_ema
 transformers
 wandb
-
+kagglehub
+onnx
+onnxruntime-gpu

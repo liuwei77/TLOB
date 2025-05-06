@@ -14,8 +14,6 @@ from utils.utils_model import pick_model
 import constants as cst
 from scipy.stats import mode
 
-from visualizations.attentions import plot_mean_att_distance
-
 
 class Engine(LightningModule):
     def __init__(
@@ -28,7 +26,7 @@ class Engine(LightningModule):
         experiment_type,
         lr,
         optimizer,
-        filename_ckpt,
+        dir_ckpt,
         num_features,
         dataset_type,
         num_layers=4,
@@ -36,7 +34,6 @@ class Engine(LightningModule):
         num_heads=8,
         is_sin_emb=True,
         len_test_dataloader=None,
-        plot_att=False
     ):
         super().__init__()
         self.seq_size = seq_size
@@ -49,7 +46,7 @@ class Engine(LightningModule):
         self.len_test_dataloader = len_test_dataloader
         self.lr = lr
         self.optimizer = optimizer
-        self.filename_ckpt = filename_ckpt
+        self.dir_ckpt = dir_ckpt
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.num_features = num_features
@@ -71,28 +68,10 @@ class Engine(LightningModule):
         self.save_hyperparameters()
         self.last_path_ckpt = None
         self.first_test = True
-        self.plot_att = plot_att
+        self.test_mid_prices = []
         
-    def forward(self, x, plot_this_att=False, batch_idx=None):
-        if self.model_type == "TLOB":
-            output, att_temporal, att_feature = self.model(x, plot_this_att)
-        else:
-            output = self.model(x)
-        if self.is_wandb and plot_this_att and self.model_type == "TLOB":
-            for l in range(len(att_temporal)):
-                for i in range(self.num_heads):
-                    plt.figure(figsize=(10, 8))
-                    sns.heatmap(att_temporal[l, i], fmt=".2f", cmap="viridis")
-                    plt.title(f'Temporal Attention Layer {l} Head {i}')
-                    wandb.log({f"Temporal Attention Layer {l} Head {i} for batch {batch_idx}": wandb.Image(plt)})
-                    plt.close()
-            for l in range(len(att_feature)):
-                for i in range(self.num_heads):
-                    plt.figure(figsize=(10, 8))
-                    sns.heatmap(att_feature[l, i], fmt=".2f", cmap="viridis")
-                    plt.title(f'Feature Attention Layer {l} Head {i}')
-                    wandb.log({f"Feature Attention Layer {l} Head {i}  for batch {batch_idx}": wandb.Image(plt)})
-                    plt.close()
+    def forward(self, x, batch_idx=None):
+        output = self.model(x)
         return output
     
     def loss(self, y_hat, y):
@@ -123,26 +102,16 @@ class Engine(LightningModule):
             batch_loss_mean = torch.mean(batch_loss)
             self.val_losses.append(batch_loss_mean.item())
         return batch_loss_mean
-    
-    def on_test_epoch_start(self):
-        # Extract 30 random numbers from the length of the test_dataloader
-        random_indices = random.sample(range(self.len_test_dataloader), 5)
-        print(f'Random indices: {random_indices}')
-        self.random_indices = random_indices  # Store the random indices if needed
-        return 
         
     
     def test_step(self, batch, batch_idx):
         x, y = batch
+        mid_prices = ((x[:, 0, 0] + x[:, 0, 2]) // 2).cpu().numpy().flatten()
+        self.test_mid_prices.append(mid_prices)
         # Test: with EMA
-        if batch_idx in self.random_indices and self.model_type == "TLOB" and self.first_test and self.plot_att:
-            plot_this_att = True
-            print(f'Plotting attention for batch {batch_idx}')
-        else:
-            plot_this_att = False
         if self.experiment_type == "TRAINING":
             with self.ema.average_parameters():
-                y_hat = self.forward(x, plot_this_att, batch_idx)
+                y_hat = self.forward(x, batch_idx)
                 batch_loss = self.loss(y_hat, y)
                 self.test_targets.append(y.cpu().numpy())
                 self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
@@ -150,7 +119,7 @@ class Engine(LightningModule):
                 batch_loss_mean = torch.mean(batch_loss)
                 self.test_losses.append(batch_loss_mean.item())
         else:
-            y_hat = self.forward(x, plot_this_att, batch_idx)
+            y_hat = self.forward(x, batch_idx)
             batch_loss = self.loss(y_hat, y)
             self.test_targets.append(y.cpu().numpy())
             self.test_predictions.append(y_hat.argmax(dim=1).cpu().numpy())
@@ -162,8 +131,8 @@ class Engine(LightningModule):
     def on_validation_epoch_start(self) -> None:
         loss = sum(self.train_losses) / len(self.train_losses)
         self.train_losses = []
-        if self.is_wandb:
-            wandb.log({"train_loss": loss})
+        # Store train loss for combined plotting
+        self.current_train_loss = loss
         print(f'Train loss on epoch {self.current_epoch}: {loss}')
         
     def on_validation_epoch_end(self) -> None:
@@ -172,14 +141,18 @@ class Engine(LightningModule):
         
         # model checkpointing
         if self.val_loss < self.min_loss:
-            # if the improvement is less than 0.0005, we halve the learning rate
-            if self.val_loss - self.min_loss > -0.001:
+            # if the improvement is less than 0.0002, we halve the learning rate
+            if self.val_loss - self.min_loss > -0.002:
                 self.optimizer.param_groups[0]["lr"] /= 2  
             self.min_loss = self.val_loss
             self.model_checkpointing(self.val_loss)
         else:
             self.optimizer.param_groups[0]["lr"] /= 2
         
+        # Log losses to wandb (both individually and in the same plot)
+        self.log_losses_to_wandb(self.current_train_loss, self.val_loss)
+        
+        # Continue with regular Lightning logging for compatibility
         self.log("val_loss", self.val_loss)
         print(f'Validation loss on epoch {self.current_epoch}: {self.val_loss}')
         targets = np.concatenate(self.val_targets)    
@@ -192,11 +165,24 @@ class Engine(LightningModule):
         self.log("val_recall", class_report["macro avg"]["recall"])
         self.val_targets = []
         self.val_predictions = [] 
-        
-
+    
+    def log_losses_to_wandb(self, train_loss, val_loss):
+        """Log training and validation losses to wandb in the same plot."""
+        if self.is_wandb:   
+            # Log combined losses for a single plot
+            wandb.log({
+                "losses": {
+                    "train": train_loss,
+                    "validation": val_loss
+                },
+                "epoch": self.global_step
+            })
+    
     def on_test_epoch_end(self) -> None:
         targets = np.concatenate(self.test_targets)    
         predictions = np.concatenate(self.test_predictions)
+        predictions_path = os.path.join(cst.DIR_SAVED_MODEL, str(self.model_type), self.dir_ckpt, "predictions")
+        np.save(predictions_path, predictions)
         class_report = classification_report(targets, predictions, digits=4, output_dict=True)
         print(classification_report(targets, predictions, digits=4))
         self.log("test_loss", sum(self.test_losses) / len(self.test_losses))
@@ -204,25 +190,13 @@ class Engine(LightningModule):
         self.log("accuracy", class_report["accuracy"])
         self.log("precision", class_report["macro avg"]["precision"])
         self.log("recall", class_report["macro avg"]["recall"])
-        filename_ckpt = ("val_loss=" + str(round(self.val_loss, 3)) +
-                             "_epoch=" + str(self.current_epoch) +
-                             "_" + self.filename_ckpt +
-                             "last.ckpt"
-                             )
-        path_ckpt = cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" + filename_ckpt
         self.test_targets = []
         self.test_predictions = []
         self.test_losses = []  
         self.first_test = False
         test_proba = np.concatenate(self.test_proba)
         precision, recall, _ = precision_recall_curve(targets, test_proba, pos_label=1)
-        self.plot_pr_curves(recall, precision, self.is_wandb)
-        with self.ema.average_parameters():
-            self.trainer.save_checkpoint(path_ckpt)   
-        if self.model_type == "TLOB" and self.plot_att:
-            plot = plot_mean_att_distance(np.array(self.model.mean_att_distance_temporal).mean(axis=0))
-            if self.is_wandb:
-                wandb.log({"mean_att_distance": wandb.Image(plot)})
+        self.plot_pr_curves(recall, precision, self.is_wandb) 
         
     def configure_optimizers(self):
         if self.model_type == "DEEPLOB":
@@ -245,12 +219,46 @@ class Engine(LightningModule):
             os.remove(self.last_path_ckpt)
         filename_ckpt = ("val_loss=" + str(round(loss, 3)) +
                              "_epoch=" + str(self.current_epoch) +
-                             "_" + self.filename_ckpt +
-                             ".ckpt"
+                             ".pt"
                              )
-        path_ckpt = cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" + filename_ckpt
+        path_ckpt = os.path.join(cst.DIR_SAVED_MODEL, str(self.model_type), self.dir_ckpt, "pt", filename_ckpt)
+        
+        # Save PyTorch checkpoint
         with self.ema.average_parameters():
             self.trainer.save_checkpoint(path_ckpt)
+            
+            # Save ONNX model
+            onnx_dir = os.path.join(cst.DIR_SAVED_MODEL, str(self.model_type), self.dir_ckpt, "onnx")
+            os.makedirs(onnx_dir, exist_ok=True)
+            
+            onnx_filename = ("val_loss=" + str(round(loss, 3)) +
+                             "_epoch=" + str(self.current_epoch) +
+                             ".onnx"
+                            )
+            onnx_path = os.path.join(onnx_dir, onnx_filename)
+            
+            # Create dummy input with appropriate shape
+            dummy_input = torch.randn(1, self.seq_size, self.num_features, device=self.device)
+            
+            # Export to ONNX
+            try:
+                torch.onnx.export(
+                    self.model,                  # model being run
+                    dummy_input,                 # model input (or a tuple for multiple inputs)
+                    onnx_path,                   # where to save the model
+                    export_params=True,          # store the trained parameter weights inside the model file
+                    opset_version=12,            # the ONNX version to export the model to
+                    do_constant_folding=True,    # whether to execute constant folding for optimization
+                    input_names=['input'],       # the model's input names
+                    output_names=['output'],     # the model's output names
+                    dynamic_axes={               # variable length axes
+                        'input': {0: 'batch_size'},
+                        'output': {0: 'batch_size'}
+                    }
+                )
+            except Exception as e:
+                print(f"Failed to export ONNX model: {e}")
+        
         self.last_path_ckpt = path_ckpt  
         
     def plot_pr_curves(self, recall, precision, is_wandb):

@@ -13,6 +13,7 @@
             "console": "integratedTerminal",
             "args": [
                 "+model=mlplob",
+                "+dataset=btc",
                 "hydra.job.chdir=False",
                 "hydra.run.dir=.",
             ]

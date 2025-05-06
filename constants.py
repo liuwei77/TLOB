@@ -1,9 +1,11 @@
 import torch
 from enum import Enum
+from preprocessing.dataset import Dataset  
 
-class Dataset(Enum):
+class DatasetType(Enum):
     LOBSTER = "LOBSTER"
     FI_2010 = "FI_2010"
+    BTC = "BTC"
     
 
 class ModelType(Enum):
@@ -11,6 +13,11 @@ class ModelType(Enum):
     TLOB = "TLOB"
     BINCTABL = "BINCTABL"
     DEEPLOB = "DEEPLOB"
+    
+class SamplingType(Enum):
+    TIME = "time"
+    QUANTITY = "quantity"
+    NONE = "none"
 
 
 
@@ -54,11 +61,12 @@ LEN_LEVEL = 4
 LEN_ORDER = 6
 LEN_SMOOTH = 10
 
-DATE_TRADING_DAYS = ["2015-01-02", "2015-01-30"]
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 DIR_EXPERIMENTS = "data/experiments"
 DIR_SAVED_MODEL = "data/checkpoints"
 DATA_DIR = "data"
 RECON_DIR = "data/reconstructions"
-PROJECT_NAME = ""
+PROJECT_NAME = "EvolutionData"
 SPLIT_RATES = [0.8, 0.1, 0.1]
+WANDB_API = ""
+WANDB_USERNAME = ""

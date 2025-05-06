@@ -110,36 +110,15 @@ class TLOB(nn.Module):
         x = rearrange(x, 'b f s -> b s f')
         x = self.emb_layer(x)
         x = x[:] + self.pos_encoder
-        mean_att_distance_temporal = np.zeros((self.num_layers, self.num_heads))
-        att_max_temporal = np.zeros((self.num_layers, 2, self.num_heads, self.seq_size))
-        att_max_feature = np.zeros((self.num_layers-1, 2, self.num_heads, self.hidden_dim))
-        att_temporal = np.zeros((self.num_layers, self.num_heads, self.seq_size, self.seq_size))
-        att_feature = np.zeros((self.num_layers-1, self.num_heads, self.hidden_dim, self.hidden_dim))
         for i in range(len(self.layers)):
             x, att = self.layers[i](x)
             att = att.detach()
             x = x.permute(0, 2, 1)
-            if store_att:
-                if i % 2 == 0:
-                    att_temporal[i//2] = att[0].cpu().numpy()
-                    values, indices = att[0].max(dim=2)
-                    mean_att_distance_temporal[i//2] = compute_mean_att_distance(att[0])
-                    att_max_temporal[i//2, 0] = indices.cpu().numpy()
-                    att_max_temporal[i//2, 1] = values.cpu().numpy()
-                elif i % 2 == 1 and i != len(self.layers)-1:
-                    att_feature[i//2] = att[0].cpu().numpy()
-                    values, indices = att[0].max(dim=2)
-                    att_max_feature[i//2, 0] = indices.cpu().numpy()
-                    att_max_feature[i//2, 1] = values.cpu().numpy()
-        self.mean_att_distance_temporal.append(mean_att_distance_temporal)
-        if store_att:
-            self.att_temporal.append(att_max_temporal)
-            self.att_feature.append(att_max_feature)
         x = rearrange(x, 'b s f -> b (f s) 1')              
         x = x.reshape(x.shape[0], -1)
         for layer in self.final_layers:
             x = layer(x)
-        return x, att_temporal, att_feature
+        return x
     
     
 def sinusoidal_positional_embedding(token_sequence_size, token_embedding_dim, n=10000.0):

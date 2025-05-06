@@ -1,5 +1,5 @@
 import os
-from utils.utils_data import z_score_orderbook, normalize_messages, preprocess_data, one_hot_encoding_type
+from utils.utils_data import reset_indexes, z_score_orderbook, normalize_messages, labeling
 import pandas as pd
 import numpy as np
 import torch
@@ -33,42 +33,6 @@ def lobster_load(path, all_features, len_smooth, h, seq_size):
         input = torch.from_numpy(input).float()
 
     return input, labels
-
-    
-def labeling(X, len, h, stock):
-    # X is the orderbook
-    # len is the time window smoothing length
-    # h is the prediction horizon
-    [N, D] = X.shape
-    
-    if h < len:
-        len = h
-    # Calculate previous and future mid-prices for all relevant indices
-    previous_ask_prices = np.lib.stride_tricks.sliding_window_view(X[:, 0], window_shape=len)[:-h]
-    previous_bid_prices = np.lib.stride_tricks.sliding_window_view(X[:, 2], window_shape=len)[:-h]
-    future_ask_prices = np.lib.stride_tricks.sliding_window_view(X[:, 0], window_shape=len)[h:]
-    future_bid_prices = np.lib.stride_tricks.sliding_window_view(X[:, 2], window_shape=len)[h:]
-
-    previous_mid_prices = (previous_ask_prices + previous_bid_prices) / 2
-    future_mid_prices = (future_ask_prices + future_bid_prices) / 2
-
-    previous_mid_prices = np.mean(previous_mid_prices, axis=1)
-    future_mid_prices = np.mean(future_mid_prices, axis=1)
-
-    # Compute percentage change
-    percentage_change = (future_mid_prices - previous_mid_prices) / previous_mid_prices
-    
-    # alpha is the average percentage change of the stock
-    alpha = np.abs(percentage_change).mean() / 2
-    
-    # alpha is the average spread of the stock in percentage of the mid-price
-    #alpha = (X[:, 0] - X[:, 2]).mean() / ((X[:, 0] + X[:, 2]) / 2).mean()
-        
-    print(f"Alpha: {alpha}")
-    labels = np.where(percentage_change < -alpha, 2, np.where(percentage_change > alpha, 0, 1))
-    print(f"Number of labels: {np.unique(labels, return_counts=True)}")
-    print(f"Percentage of labels: {np.unique(labels, return_counts=True)[1] / labels.shape[0]}")
-    return labels
 
 
 class LOBSTERDataBuilder:
@@ -146,9 +110,9 @@ class LOBSTERDataBuilder:
         #create a dataframe for the labels
         for i in range(len(cst.LOBSTER_HORIZONS)):
             if i == 0:
-                train_labels = labeling(train_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i], stock)
-                val_labels = labeling(val_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i], stock)
-                test_labels = labeling(test_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i], stock)
+                train_labels = labeling(train_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i])
+                val_labels = labeling(val_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i])
+                test_labels = labeling(test_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i])
                 train_labels = np.concatenate([train_labels, np.full(shape=(train_input.shape[0] - train_labels.shape[0]), fill_value=np.inf)])
                 val_labels = np.concatenate([val_labels, np.full(shape=(val_input.shape[0] - val_labels.shape[0]), fill_value=np.inf)])
                 test_labels = np.concatenate([test_labels, np.full(shape=(test_input.shape[0] - test_labels.shape[0]), fill_value=np.inf)])
@@ -156,17 +120,15 @@ class LOBSTERDataBuilder:
                 self.val_labels_horizons = pd.DataFrame(val_labels, columns=["label_h{}".format(cst.LOBSTER_HORIZONS[i])])
                 self.test_labels_horizons = pd.DataFrame(test_labels, columns=["label_h{}".format(cst.LOBSTER_HORIZONS[i])])
             else:
-                train_labels = labeling(train_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i], stock)
-                val_labels = labeling(val_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i], stock)
-                test_labels = labeling(test_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i], stock)
+                train_labels = labeling(train_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i])
+                val_labels = labeling(val_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i]) 
+                test_labels = labeling(test_input, cst.LEN_SMOOTH, cst.LOBSTER_HORIZONS[i])
                 train_labels = np.concatenate([train_labels, np.full(shape=(train_input.shape[0] - train_labels.shape[0]), fill_value=np.inf)])
                 val_labels = np.concatenate([val_labels, np.full(shape=(val_input.shape[0] - val_labels.shape[0]), fill_value=np.inf)])
                 test_labels = np.concatenate([test_labels, np.full(shape=(test_input.shape[0] - test_labels.shape[0]), fill_value=np.inf)])
                 self.train_labels_horizons["label_h{}".format(cst.LOBSTER_HORIZONS[i])] = train_labels
                 self.val_labels_horizons["label_h{}".format(cst.LOBSTER_HORIZONS[i])] = val_labels
                 self.test_labels_horizons["label_h{}".format(cst.LOBSTER_HORIZONS[i])] = test_labels
-        
-        #self._sparse_representation()
         
         # to conclude the preprocessing we normalize the dataframes
         self._normalize_dataframes()
@@ -238,13 +200,13 @@ class LOBSTERDataBuilder:
                         if i == 1:
                             train_orderbooks = pd.read_csv(f, names=COLUMNS_NAMES["orderbook"])
                             total_shape += train_orderbooks.shape[0]
-                            train_orderbooks, train_messages = preprocess_data([train_messages, train_orderbooks], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
+                            train_orderbooks, train_messages = self._preprocess_message_orderbook([train_messages, train_orderbooks], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
                             if (len(train_orderbooks) != len(train_messages)):
                                 raise ValueError("train_orderbook length is different than train_messages")
                         else:
                             train_orderbook = pd.read_csv(f, names=COLUMNS_NAMES["orderbook"])
                             total_shape += train_orderbook.shape[0]
-                            train_orderbook, train_message = preprocess_data([train_message, train_orderbook], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
+                            train_orderbook, train_message = self._preprocess_message_orderbook([train_message, train_orderbook], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
                             train_messages = pd.concat([train_messages, train_message], axis=0)
                             train_orderbooks = pd.concat([train_orderbooks, train_orderbook], axis=0)
 
@@ -259,13 +221,13 @@ class LOBSTERDataBuilder:
                         if i == split_days[0] + 1:
                             val_orderbooks = pd.read_csv(f, names=COLUMNS_NAMES["orderbook"])
                             total_shape += val_orderbooks.shape[0]
-                            val_orderbooks, val_messages = preprocess_data([val_messages, val_orderbooks], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
+                            val_orderbooks, val_messages = self._preprocess_message_orderbook([val_messages, val_orderbooks], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
                             if (len(val_orderbooks) != len(val_messages)):
                                 raise ValueError("val_orderbook length is different than val_messages")
                         else:
                             val_orderbook = pd.read_csv(f, names=COLUMNS_NAMES["orderbook"])
                             total_shape += val_orderbook.shape[0]
-                            val_orderbook, val_message = preprocess_data([val_message, val_orderbook], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
+                            val_orderbook, val_message = self._preprocess_message_orderbook([val_message, val_orderbook], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
                             val_messages = pd.concat([val_messages, val_message], axis=0)
                             val_orderbooks = pd.concat([val_orderbooks, val_orderbook], axis=0)
 
@@ -281,12 +243,12 @@ class LOBSTERDataBuilder:
                     else:
                         if i == split_days[1] + 1:
                             test_orderbooks = pd.read_csv(f, names=COLUMNS_NAMES["orderbook"])
-                            test_orderbooks, test_messages = preprocess_data([test_messages, test_orderbooks], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
+                            test_orderbooks, test_messages = self._preprocess_message_orderbook([test_messages, test_orderbooks], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
                             if (len(test_orderbooks) != len(test_messages)):
                                 raise ValueError("test_orderbook length is different than test_messages")
                         else:
                             test_orderbook = pd.read_csv(f, names=COLUMNS_NAMES["orderbook"])
-                            test_orderbook, test_message = preprocess_data([test_message, test_orderbook], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
+                            test_orderbook, test_message = self._preprocess_message_orderbook([test_message, test_orderbook], self.n_lob_levels, self.sampling_type, self.sampling_time, self.sampling_quantity)
                             test_messages = pd.concat([test_messages, test_message], axis=0)
                             test_orderbooks = pd.concat([test_orderbooks, test_orderbook], axis=0)
             else:
@@ -322,3 +284,117 @@ class LOBSTERDataBuilder:
         test = int(self.num_trading_days * self.split_rates[2]) + val
         print(f"There are {train} days for training, {val - train} days for validation and {test - val} days for testing")
         return [train, val, test]
+    
+    
+    def _sampling_quantity(self, dataframes, quantity):
+        messages_df, orderbook_df = dataframes
+        
+        # Calculate cumulative sum and create boolean mask
+        cumsum = messages_df['size'].cumsum()
+        sample_mask = (cumsum % quantity < messages_df['size'])
+        
+        # Get indices where we need to sample
+        sampled_indices = messages_df.index[sample_mask].tolist()
+        
+        # Update both dataframes efficiently using loc
+        messages_df = messages_df.loc[sampled_indices].reset_index(drop=True)
+        orderbook_df = orderbook_df.loc[sampled_indices].reset_index(drop=True)
+        
+        return [messages_df, orderbook_df]
+
+
+    def _sampling_time(self, dataframes, time):
+        # Convert the time column to datetime format if it's not already
+        dataframes[0]['time'] = pd.to_datetime(dataframes[0]['time'], unit='s')
+
+        # Resample the messages dataframe to get data at every second
+        resampled_messages = dataframes[0].set_index('time').resample(time).first().dropna().reset_index()
+
+        # Resample the orderbook dataframe to get data at every second
+        resampled_orderbook = dataframes[1].set_index(dataframes[0]['time']).resample(time).first().dropna().reset_index(drop=True)
+
+        # Update the dataframes with the resampled data
+        dataframes[0] = resampled_messages
+        
+        # Transform the time column to seconds
+        dataframes[0]['time'] = dataframes[0]['time'].dt.second + dataframes[0]['time'].dt.minute * 60 + dataframes[0]['time'].dt.hour * 3600 + dataframes[0]['time'].dt.microsecond / 1e6
+        dataframes[1] = resampled_orderbook
+
+        return dataframes
+    
+    def _preprocess_message_orderbook(self, dataframes, n_lob_levels, sampling_type, time=None, quantity=None):
+        dataframes = reset_indexes(dataframes)
+        # take only the first n_lob_levels levels of the orderbook and drop the others
+        dataframes[1] = dataframes[1].iloc[:, :n_lob_levels * cst.LEN_LEVEL]
+
+        # take the indexes of the dataframes that are of type 
+        # 2 (partial deletion), 5 (execution of a hidden limit order), 
+        # 6 (cross trade), 7 (trading halt) and drop it
+        indexes_to_drop = dataframes[0][dataframes[0]["event_type"].isin([2, 5, 6, 7])].index
+        dataframes[0] = dataframes[0].drop(indexes_to_drop)
+        dataframes[1] = dataframes[1].drop(indexes_to_drop)
+
+        dataframes = reset_indexes(dataframes)
+
+        # sample the dataframes according to the sampling type
+        if sampling_type == "time":
+            dataframes = self._sampling_time(dataframes, time)
+        elif sampling_type == "quantity":
+            dataframes = self._sampling_quantity(dataframes, quantity)
+            
+        dataframes = reset_indexes(dataframes)
+        
+        # drop index column in messages
+        dataframes[0] = dataframes[0].drop(columns=["order_id"])
+
+        # do the difference of time row per row in messages and subsitute the values with the differences
+        # Store the initial value of the "time" column
+        first_time = dataframes[0]["time"].values[0]
+        # Calculate the difference using diff
+        dataframes[0]["time"] = dataframes[0]["time"].diff()
+        # Set the first value directly
+        dataframes[0].iat[0, dataframes[0].columns.get_loc("time")] = first_time - 34200
+            
+        # add depth column to messages
+        dataframes[0]["depth"] = 0
+
+        # we compute the depth of the orders with respect to the orderbook
+        # Extract necessary columns
+        prices = dataframes[0]["price"].values
+        directions = dataframes[0]["direction"].values
+        event_types = dataframes[0]["event_type"].values
+        bid_sides = dataframes[1].iloc[:, 2::4].values
+        ask_sides = dataframes[1].iloc[:, 0::4].values
+        
+        # Initialize depth array
+        depths = np.zeros(dataframes[0].shape[0], dtype=int)
+
+        # Compute the depth of the orders with respect to the orderbook
+        for j in range(1, len(prices)):
+            order_price = prices[j]
+            direction = directions[j]
+            event_type = event_types[j]
+            
+            index = j if event_type == 1 else j - 1
+            
+            if direction == 1:
+                bid_price = bid_sides[index, 0]
+                depth = (bid_price - order_price) // 100
+            else:
+                ask_price = ask_sides[index, 0]
+                depth = (order_price - ask_price) // 100
+            
+            depths[j] = max(depth, 0)
+        
+        # Assign the computed depths back to the DataFrame
+        dataframes[0]["depth"] = depths
+            
+        # we eliminate the first row of every dataframe because we can't deduce the depth
+        dataframes[0] = dataframes[0].iloc[1:, :]
+        dataframes[1] = dataframes[1].iloc[1:, :]
+        dataframes = reset_indexes(dataframes)
+        
+        dataframes[0]["direction"] = dataframes[0]["direction"] * dataframes[0]["event_type"].apply(
+            lambda x: -1 if x == 4 else 1)
+            
+        return dataframes[1], dataframes[0]

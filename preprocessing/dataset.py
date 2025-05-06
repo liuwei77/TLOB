@@ -31,9 +31,6 @@ class Dataset(data.Dataset):
         return input, self.y[i]
     
 
-
-        
-    
 class DataModule(pl.LightningDataModule):
     def   __init__(self, train_set, val_set, batch_size, test_batch_size,  is_shuffle_train=True, test_set=None, num_workers=16):
         super().__init__()
@@ -64,7 +61,7 @@ class DataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             dataset=self.val_set,
-            batch_size=self.test_batch_size,
+            batch_size=self.batch_size,
             shuffle=False,
             pin_memory=self.pin_memory,
             drop_last=False,

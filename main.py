@@ -6,48 +6,48 @@ import urllib
 import zipfile
 warnings.filterwarnings("ignore")
 import numpy as np
-import torchvision
 import wandb
 import torch
-torchvision.disable_beta_transforms_warning()
 import constants as cst
 import hydra
 from config.config import Config
 from run import run_wandb, run, sweep_init
 from preprocessing.lobster import LOBSTERDataBuilder
-from constants import Dataset
-from config.config import MLPLOB, TLOB
+from preprocessing.btc import BTCDataBuilder
+from constants import DatasetType
 
 @hydra.main(config_path="config", config_name="config")
 def hydra_app(config: Config):
     set_reproducibility(config.experiment.seed)
+    print("Using device: ", cst.DEVICE)
     if (cst.DEVICE == "cpu"):
         accelerator = "cpu"
     else:
         accelerator = "gpu"
-    if config.experiment.dataset_type == Dataset.FI_2010:
-        config.experiment.batch_size = 32
+    if config.dataset.type == DatasetType.FI_2010:
         if config.model.type.value == "MLPLOB" or config.model.type.value == "TLOB":
             config.model.hyperparameters_fixed["hidden_dim"] = 144
-    else:
-        config.experiment.batch_size = 128 
+    elif config.dataset.type == DatasetType.BTC:
+        if config.model.type.value == "MLPLOB" or config.model.type.value == "TLOB":
+            config.model.hyperparameters_fixed["hidden_dim"] = 40
+    elif config.dataset.type == DatasetType.LOBSTER:
         if config.model.type.value == "MLPLOB" or config.model.type.value == "TLOB":
             config.model.hyperparameters_fixed["hidden_dim"] = 46
-
-    if config.experiment.dataset_type.value == "LOBSTER" and not config.experiment.is_data_preprocessed:
+    
+    if config.dataset.type.value == "LOBSTER" and not config.experiment.is_data_preprocessed:
         # prepare the datasets, this will save train.npy, val.npy and test.npy in the data directory
         data_builder = LOBSTERDataBuilder(
-            stocks=config.experiment.training_stocks,
+            stocks=config.dataset.training_stocks,
             data_dir=cst.DATA_DIR,
-            date_trading_days=cst.DATE_TRADING_DAYS,
+            date_trading_days=config.dataset.dates,
             split_rates=cst.SPLIT_RATES,
-            sampling_type=config.experiment.sampling_type,
-            sampling_time=config.experiment.sampling_time,
-            sampling_quantity=config.experiment.sampling_quantity,
+            sampling_type=config.dataset.sampling_type,
+            sampling_time=config.dataset.sampling_time,
+            sampling_quantity=config.dataset.sampling_quantity,
         )
         data_builder.prepare_save_datasets()
         
-    elif config.experiment.dataset_type.value == "FI_2010" and not config.experiment.is_data_preprocessed:
+    elif config.dataset.type.value == "FI_2010" and not config.experiment.is_data_preprocessed:
         try:
             #take the .zip files name in data/FI_2010
             dir = cst.DATA_DIR + "/FI_2010/"
@@ -59,6 +59,18 @@ def hydra_app(config: Config):
             print("Data extracted.")
         except Exception as e:
             raise(f"Error downloading or extracting data: {e}")
+        
+    elif config.dataset.type == cst.DatasetType.BTC and not config.experiment.is_data_preprocessed:
+        data_builder = BTCDataBuilder(
+        data_dir=cst.DATA_DIR,
+        date_trading_days=config.dataset.dates,
+        split_rates=cst.SPLIT_RATES,
+        sampling_type=config.dataset.sampling_type,
+        sampling_time=config.dataset.sampling_time,
+        sampling_quantity=config.dataset.sampling_quantity,
+        )
+        data_builder.prepare_save_datasets()
+
     if config.experiment.is_wandb:
         if config.experiment.is_sweep:
             sweep_config = sweep_init(config)

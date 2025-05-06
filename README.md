@@ -1,6 +1,5 @@
 # TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data
-This is the official repository for the paper [TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data](https://arxiv.org/pdf/2502.15757).
-![TLOB Architecture](https://github.com/LeonardoBerti00/TLOB/blob/main/Architecture.png)
+This is the official repository for the paper TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data.
 
 ## Abstract
 Stock Price Trend Prediction (SPTP) based on Limit Order Book
@@ -17,7 +16,7 @@ To set up the environment for this project, follow these steps:
 
 1. Clone the repository:
 ```sh
-git clone https://github.com/LeonardoBerti00/TLOB.git
+git clone 
 ```
 2. Navigate to the project directory
 3. Create a virtual environment:
@@ -33,36 +32,23 @@ env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-# Reproduce the results
-To reproduce the results follow the following steps:
-
-1. In data/checkpoints/TLOB/HuggingFace/ you can find the four checkpoints for FI-2010, the checkpoints for TSLA and INTC did not fit in the free GitHub repository size. If you need also the other checkpoints you can contact me. 
-2. Inside the config file, you need to set Dataset to FI-2010, set the horizons to 1, 2, 5, or 10 finally set the experiment type to EVALUATION. Everything should already be set.
-3. Now run:
-```sh
-python main.py +model=tlob hydra.job.chdir=False
-```
-After doing the first run, both for training or reproducing, you can set config.Experiment.is_data_preprocessed to True.
-Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. 
-
 # Training
-If your objective is to train a TLOB or MLPLOB model or implement your model you should follow those steps.
+If your objective is to train a TLOB or MLPLOB model or implement your model you should follow those steps. Unfortunately we cannot upload the checkpoints for size limit, which is set to 50MB. We will release the checkpoints upon acceptance. 
 
 ## Data 
 If you have some LOBSTER data you can follow those steps:
 1. The format of the data should be the same of LOBSTER: f"{year}-{month}-{day}_34200000_57600000_{type}" and the data should be saved in f"data/{stock_name}/{stock_name}_{year}-{start_month}-{start_day}_{year}-{end_month}-{end_day}". Type can be or message or orderbook.
 2. Inside the config file, you need to set the name of the training stock and the testing stocks, and also the dataset to LOBSTER. Currently you can add only one for the training but several for testing. 
-3. You need to start the pre-processing step, to do so set config.is_data_preprocessed to False and run python main.py
+3. You need to do the pre-processing step, to do so set config.is_data_preprocessed to False
 
-Otherwise, if you want to train and test the model with the Benchmark dataset FI-2010 you need, inside the config file, set Dataset to FI-2010 and set the horizons to 1, 2, 5, or 10, and the experiment type to TRAINING. Note that the horizons in the paper are an order of magnitude higher because in the paper the value represent the horizons before the sampling process of the dataset. In fact, the dataset is sampled every 10 events. After doing the first run, both for training or reproducing, you can set config.Experiment.is_data_preprocessed to True.
-
+Otherwise, you can train and test with the BTC and FI-2010 datasets that will be automatically downloaded from kaggle or unzipped, respectively. You need to set config.is_data_preprocessed to False.
 
 ## Training a TLOB, MLPLOB, DeepLOB or BiNCTABL Model 
 To train a TLOB, MLPLOB, DeepLOB or BiNCTABL Model, you need to set the type variable in the config file to TRAINING, then run this command:
 ```sh
-python main.py +model={model_name} hydra.job.chdir=False
+python main.py +model={model_name} +dataset={dataset_name} hydra.job.chdir=False
 ```
-you can see all the model names in the config file. 
+A checkpoint will be saved in data/checkpoints/. You can see all the model and dataset names in the config file. 
 
 ## Implementing and Training a new model 
 To implement a new model, follow these steps:
@@ -72,27 +58,10 @@ To implement a new model, follow these steps:
 4. Add your model with cs.store, similar to the other models
 5. Run the training script:
 ```sh
-python main.py +model={your_model_name} hydra.job.chdir=False
+python main.py +model={your_model_name} +dataset={dataset_name} hydra.job.chdir=False
 ```
 6. You can set whatever configuration using the hydra style of prompt.
 7. A checkpoint will be saved in data/checkpoints/ 
 
 Optionally you can also log the run with wandb or run a sweep, changing the config experiment options.
 
-# Results
-MLPLOB and TLOB outperform all the other SoTA deep learning models for Stock Price Trend Prediction with LOB data for both datasets, FI-2010 benchmark and TSLA-INTC.
-![FI-2010 results](https://github.com/LeonardoBerti00/TLOB/blob/main/fI-2010.png)
-![TSLA and INTC results](https://github.com/LeonardoBerti00/TLOB/blob/main/tslaintc.png)
-
-# Citation
-```sh
-@misc{berti2025tlobnoveltransformermodel,
-      title={TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data}, 
-      author={Leonardo Berti and Gjergji Kasneci},
-      year={2025},
-      eprint={2502.15757},
-      archivePrefix={arXiv},
-      primaryClass={q-fin.ST},
-      url={https://arxiv.org/abs/2502.15757}, 
-}
-```
