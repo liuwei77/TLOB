@@ -61,7 +61,12 @@ LEN_LEVEL = 4
 LEN_ORDER = 6
 LEN_SMOOTH = 10
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+if torch.cuda.is_available():
+    DEVICE = 'cuda'
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    DEVICE = 'mps'
+else:
+    DEVICE = 'cpu'
 DIR_EXPERIMENTS = "data/experiments"
 DIR_SAVED_MODEL = "data/checkpoints"
 DATA_DIR = "data"

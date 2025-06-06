@@ -92,8 +92,9 @@ def set_reproducibility(seed):
 
 def set_torch():
     torch.set_default_dtype(torch.float32)
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
+    if torch.cuda.is_available():
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
     torch.autograd.set_detect_anomaly(False)
     torch.set_float32_matmul_precision('high')
     
