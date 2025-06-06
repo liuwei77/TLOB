@@ -13,7 +13,7 @@ We argue that our work provides new insights into the evolving landscape of stoc
 These instructions will get you a copy of the project up and running on your local machine for development and reproducibility purposes.
 
 ## Prerequisities
-This project requires Windows, Python, and pip. If you don't have them installed, please do so first. It is possible to do it using conda or/and Linux, but in that case, you are on your own.
+This project requires Python and pip. The code has been tested on Windows and Linux. It can also run on macOS (including Apple Silicon) as long as a compatible PyTorch build is installed.
 
 ## Installing
 To set up the environment for this project, follow these steps:
@@ -34,6 +34,10 @@ env\Scripts\activate
 5. Download the necessary packages:
 ```sh
 pip install -r requirements.txt
+```
+On macOS you may install the CPU/MPS build of PyTorch, e.g.:
+```sh
+pip install torch==2.5.0 torchvision torchaudio
 ```
 
 # Training
