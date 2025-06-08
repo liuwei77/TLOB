@@ -14,7 +14,6 @@ seaborn
 torch==2.5.0
 torch_ema
 transformers
-wandb
 kagglehub
 onnx
 onnxruntime

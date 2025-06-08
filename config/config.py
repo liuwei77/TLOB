@@ -72,7 +72,6 @@ class BTC(Dataset):
 @dataclass
 class Experiment:
     is_data_preprocessed: bool = False
-    is_wandb: bool = True
     is_sweep: bool = False
     type: list = field(default_factory=lambda: ["TRAINING"])
     is_debug: bool = False

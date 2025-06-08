@@ -1,10 +1,7 @@
 import lightning as L
 import omegaconf
 import torch
-import glob
 import os
-from lightning.pytorch.loggers import WandbLogger
-import wandb
 from torch.utils.data import DataLoader
 from lightning.pytorch.callbacks import TQDMProgressBar
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
@@ -15,7 +12,6 @@ from preprocessing.lobster import lobster_load
 from preprocessing.btc import btc_load
 from preprocessing.dataset import Dataset, DataModule
 import constants as cst
-from constants import DatasetType, SamplingType
 torch.serialization.add_safe_globals([omegaconf.listconfig.ListConfig])
 
 
@@ -188,7 +184,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=max_epochs,
                 model_type=model_type,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=lr,
                 optimizer=optimizer,
@@ -206,7 +201,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=max_epochs,
                 model_type=model_type,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=lr,
                 optimizer=optimizer,
@@ -227,7 +221,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=max_epochs,
                 model_type=model_type,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=lr,
                 optimizer=optimizer,
@@ -244,7 +237,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=max_epochs,
                 model_type=model_type,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=lr,
                 optimizer=optimizer,
@@ -262,7 +254,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=config.experiment.max_epochs,
                 model_type=config.model.type.value,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=config.model.hyperparameters_fixed["lr"],
                 optimizer=config.experiment.optimizer,
@@ -279,7 +270,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=config.experiment.max_epochs,
                 model_type=config.model.type.value,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=config.model.hyperparameters_fixed["lr"],
                 optimizer=config.experiment.optimizer,
@@ -298,7 +288,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=config.experiment.max_epochs,
                 model_type=config.model.type.value,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=config.model.hyperparameters_fixed["lr"],
                 optimizer=config.experiment.optimizer,
@@ -313,7 +302,6 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 horizon=horizon,
                 max_epochs=config.experiment.max_epochs,
                 model_type=config.model.type.value,
-                is_wandb=config.experiment.is_wandb,
                 experiment_type=experiment_type,
                 lr=config.model.hyperparameters_fixed["lr"],
                 optimizer=config.experiment.optimizer,
@@ -351,87 +339,11 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
             elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI_2010 ": output[0]["f1_score"]}, commit=False)
-            
-    
 
-def run_wandb(config: Config, accelerator):
-    def wandb_sweep_callback():
-        wandb_logger = WandbLogger(project=cst.PROJECT_NAME, log_model=False, save_dir=cst.DIR_SAVED_MODEL)
-        run_name = None
-        if not config.experiment.is_sweep:
-            run_name = ""
-            for param in config.model.keys():
-                value = config.model[param]
-                if param == "hyperparameters_sweep":
-                    continue
-                if type(value) == omegaconf.dictconfig.DictConfig:
-                    for key in value.keys():
-                        run_name += str(key[:2]) + "_" + str(value[key]) + "_"
-                else:
-                    run_name += str(param[:2]) + "_" + str(value.value) + "_"
 
-        run = wandb.init(project=cst.PROJECT_NAME, name=run_name, entity="") # set entity to your wandb username
-        
-        if config.experiment.is_sweep:
-            model_params = run.config
-        else:
-            model_params = config.model.hyperparameters_fixed
-        wandb_instance_name = ""
-        for param in config.model.hyperparameters_fixed.keys():
-            if param in model_params:
-                config.model.hyperparameters_fixed[param] = model_params[param]
-                wandb_instance_name += str(param) + "_" + str(model_params[param]) + "_"
-
-        run.name = wandb_instance_name
-        seq_size = config.model.hyperparameters_fixed["seq_size"]
-        horizon = config.experiment.horizon
-        dataset = config.dataset.type.value
-        seed = config.experiment.seed
-        if dataset == "LOBSTER":
-            training_stocks = config.dataset.training_stocks
-            config.experiment.dir_ckpt = f"{dataset}_{training_stocks}_seq_size_{seq_size}_horizon_{horizon}_seed_{seed}"
-        else:
-            config.experiment.dir_ckpt = f"{dataset}_seq_size_{seq_size}_horizon_{horizon}_seed_{seed}"
-        wandb_instance_name = config.experiment.dir_ckpt
-            
-        trainer = L.Trainer(
-            accelerator=accelerator,
-            precision=cst.PRECISION,
-            max_epochs=config.experiment.max_epochs,
-            callbacks=[
-            EarlyStopping(monitor="val_loss", mode="min", patience=1, verbose=True, min_delta=0.002),
-                TQDMProgressBar(refresh_rate=1000)
-            ],
-            num_sanity_val_steps=0,
-            logger=wandb_logger,
-            detect_anomaly=False,
-            check_val_every_n_epoch=1,
-        )
-
-        # log simulation details in WANDB console
-        run.log({"model": config.model.type.value}, commit=False)
-        run.log({"dataset": config.dataset.type.value}, commit=False)
-        run.log({"seed": config.experiment.seed}, commit=False)
-        run.log({"all_features": config.model.hyperparameters_fixed["all_features"]}, commit=False)
-        if config.dataset.type == cst.DatasetType.LOBSTER:
-            for i in range(len(config.dataset.training_stocks)):
-                run.log({f"training stock{i}": config.dataset.training_stocks[i]}, commit=False)
-            for i in range(len(config.dataset.testing_stocks)):
-                run.log({f"testing stock{i}": config.dataset.testing_stocks[i]}, commit=False)
-            run.log({"sampling_type": config.dataset.sampling_type.value}, commit=False)
-            if config.dataset.sampling_type == SamplingType.TIME:
-                run.log({"sampling_time": config.dataset.sampling_time}, commit=False)
-            elif config.dataset.sampling_type == SamplingType.QUANTITY:
-                run.log({"sampling_quantity": config.dataset.sampling_quantity}, commit=False)
-        train(config, trainer, run)
-        run.finish()
-
-    return wandb_sweep_callback
-  
-    
 def sweep_init(config: Config):
     # put your wandb key here
-    wandb.login("")
+    # wandb.login("")
     parameters = {}
     for key in config.model.hyperparameters_sweep.keys():
         parameters[key] = {'values': list(config.model.hyperparameters_sweep[key])}
@@ -460,7 +372,6 @@ def print_setup(config: Config):
     print("Horizon: ", config.experiment.horizon)
     print("All features: ", config.model.hyperparameters_fixed["all_features"])
     print("Is data preprocessed: ", config.experiment.is_data_preprocessed)
-    print("Is wandb: ", config.experiment.is_wandb)
     print("Is sweep: ", config.experiment.is_sweep)
     print(config.experiment.type)
     print("Is debug: ", config.experiment.is_debug) 

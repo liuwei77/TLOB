@@ -1,4 +1,3 @@
-wandb
 outputs
 .hydra
 __pycache__

@@ -2,16 +2,14 @@ import os
 import random
 import warnings
 
-import urllib
 import zipfile
 warnings.filterwarnings("ignore")
 import numpy as np
-import wandb
 import torch
 import constants as cst
 import hydra
 from config.config import Config
-from run import run_wandb, run, sweep_init
+from run import run
 from preprocessing.lobster import LOBSTERDataBuilder
 from preprocessing.btc import BTCDataBuilder
 from constants import DatasetType
@@ -58,31 +56,20 @@ def hydra_app(config: Config):
                         zip_ref.extractall(dir)  # Extracts to the current directory           
             print("Data extracted.")
         except Exception as e:
-            raise(f"Error downloading or extracting data: {e}")
+            raise Exception(f"Error downloading or extracting data: {e}")
         
     elif config.dataset.type == cst.DatasetType.BTC and not config.experiment.is_data_preprocessed:
         data_builder = BTCDataBuilder(
-        data_dir=cst.DATA_DIR,
-        date_trading_days=config.dataset.dates,
-        split_rates=cst.SPLIT_RATES,
-        sampling_type=config.dataset.sampling_type,
-        sampling_time=config.dataset.sampling_time,
-        sampling_quantity=config.dataset.sampling_quantity,
+            data_dir=cst.DATA_DIR,
+            date_trading_days=config.dataset.dates,
+            split_rates=cst.SPLIT_RATES,
+            sampling_type=config.dataset.sampling_type,
+            sampling_time=config.dataset.sampling_time,
+            sampling_quantity=config.dataset.sampling_quantity,
         )
         data_builder.prepare_save_datasets()
 
-    if config.experiment.is_wandb:
-        if config.experiment.is_sweep:
-            sweep_config = sweep_init(config)
-            sweep_id = wandb.sweep(sweep_config, project=cst.PROJECT_NAME, entity="")
-            wandb.agent(sweep_id, run_wandb(config, accelerator), count=sweep_config["run_cap"])
-        else:
-            start_wandb = run_wandb(config, accelerator)
-            start_wandb()
-
-    # training without using wandb
-    else:
-        run(config, accelerator)
+    run(config, accelerator)
     
 
 def set_reproducibility(seed):

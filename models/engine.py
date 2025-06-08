@@ -1,4 +1,3 @@
-import random
 from lightning import LightningModule
 import numpy as np
 from sklearn.metrics import classification_report, precision_recall_curve
@@ -6,8 +5,6 @@ from torch import nn
 import os
 import torch
 import matplotlib.pyplot as plt
-import wandb
-import seaborn as sns
 from lion_pytorch import Lion
 from torch_ema import ExponentialMovingAverage
 from utils.utils_model import pick_model
@@ -22,7 +19,6 @@ class Engine(LightningModule):
         horizon,
         max_epochs,
         model_type,
-        is_wandb,
         experiment_type,
         lr,
         optimizer,
@@ -42,7 +38,6 @@ class Engine(LightningModule):
         self.max_epochs = max_epochs
         self.model_type = model_type
         self.num_heads = num_heads
-        self.is_wandb = is_wandb
         self.len_test_dataloader = len_test_dataloader
         self.lr = lr
         self.optimizer = optimizer
@@ -149,9 +144,6 @@ class Engine(LightningModule):
         else:
             self.optimizer.param_groups[0]["lr"] /= 2
         
-        # Log losses to wandb (both individually and in the same plot)
-        self.log_losses_to_wandb(self.current_train_loss, self.val_loss)
-        
         # Continue with regular Lightning logging for compatibility
         self.log("val_loss", self.val_loss)
         print(f'Validation loss on epoch {self.current_epoch}: {self.val_loss}')
@@ -165,19 +157,8 @@ class Engine(LightningModule):
         self.log("val_recall", class_report["macro avg"]["recall"])
         self.val_targets = []
         self.val_predictions = [] 
-    
-    def log_losses_to_wandb(self, train_loss, val_loss):
-        """Log training and validation losses to wandb in the same plot."""
-        if self.is_wandb:   
-            # Log combined losses for a single plot
-            wandb.log({
-                "losses": {
-                    "train": train_loss,
-                    "validation": val_loss
-                },
-                "epoch": self.global_step
-            })
-    
+
+
     def on_test_epoch_end(self) -> None:
         targets = np.concatenate(self.test_targets)    
         predictions = np.concatenate(self.test_predictions)
@@ -196,7 +177,7 @@ class Engine(LightningModule):
         self.first_test = False
         test_proba = np.concatenate(self.test_proba)
         precision, recall, _ = precision_recall_curve(targets, test_proba, pos_label=1)
-        self.plot_pr_curves(recall, precision, self.is_wandb) 
+        self.plot_pr_curves(recall, precision) 
         
     def configure_optimizers(self):
         if self.model_type == "DEEPLOB":
@@ -211,8 +192,6 @@ class Engine(LightningModule):
             self.optimizer = Lion(self.parameters(), lr=self.lr)
         return self.optimizer
     
-    def _define_log_metrics(self):
-        wandb.define_metric("val_loss", summary="min")
 
     def model_checkpointing(self, loss):        
         if self.last_path_ckpt is not None:
@@ -261,14 +240,12 @@ class Engine(LightningModule):
         
         self.last_path_ckpt = path_ckpt  
         
-    def plot_pr_curves(self, recall, precision, is_wandb):
+    def plot_pr_curves(self, recall, precision):
         plt.figure(figsize=(20, 10), dpi=80)
         plt.plot(recall, precision, label='Precision-Recall', color='black')
         plt.xlabel('Recall')
         plt.ylabel('Precision')
         plt.title('Precision-Recall Curve')
-        if is_wandb:
-            wandb.log({f"precision_recall_curve_{self.dataset_type}": wandb.Image(plt)})
         plt.savefig(cst.DIR_SAVED_MODEL + "/" + str(self.model_type) + "/" +f"precision_recall_curve_{self.dataset_type}.svg")
         #plt.show()
         plt.close()
