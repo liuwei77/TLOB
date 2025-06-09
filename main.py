@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import constants as cst
 import hydra
-from config.config import Config
+from config.config import Config, BTC, FI_2010, LOBSTER
 from run import run
 from preprocessing.lobster import LOBSTERDataBuilder
 from preprocessing.btc import BTCDataBuilder
@@ -31,8 +31,10 @@ def hydra_app(config: Config):
     elif config.dataset.type == DatasetType.LOBSTER:
         if config.model.type.value == "MLPLOB" or config.model.type.value == "TLOB":
             config.model.hyperparameters_fixed["hidden_dim"] = 46
+    else:
+        config.model.hyperparameters_fixed["hidden_dim"] = 40 # TODO
     
-    if config.dataset.type.value == "LOBSTER" and not config.experiment.is_data_preprocessed:
+    if isinstance(config.dataset, LOBSTER) and not config.experiment.is_data_preprocessed:
         # prepare the datasets, this will save train.npy, val.npy and test.npy in the data directory
         data_builder = LOBSTERDataBuilder(
             stocks=config.dataset.training_stocks,
@@ -45,7 +47,7 @@ def hydra_app(config: Config):
         )
         data_builder.prepare_save_datasets()
         
-    elif config.dataset.type.value == "FI_2010" and not config.experiment.is_data_preprocessed:
+    elif isinstance(config.dataset, FI_2010) and not config.experiment.is_data_preprocessed:
         try:
             #take the .zip files name in data/FI_2010
             dir = cst.DATA_DIR + "/FI_2010/"
@@ -58,7 +60,7 @@ def hydra_app(config: Config):
         except Exception as e:
             raise Exception(f"Error downloading or extracting data: {e}")
         
-    elif config.dataset.type == cst.DatasetType.BTC and not config.experiment.is_data_preprocessed:
+    elif isinstance(config.dataset, BTC) and not config.experiment.is_data_preprocessed:
         data_builder = BTCDataBuilder(
             data_dir=cst.DATA_DIR,
             date_trading_days=config.dataset.dates,
@@ -68,6 +70,8 @@ def hydra_app(config: Config):
             sampling_quantity=config.dataset.sampling_quantity,
         )
         data_builder.prepare_save_datasets()
+    else:
+        print("Data already preprocessed")
 
     run(config, accelerator)
     

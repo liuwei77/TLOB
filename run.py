@@ -148,8 +148,26 @@ def train(config: Config, trainer: L.Trainer, run=None):
             num_workers=4
         )
     else:
-        raise ValueError(f"Unknown dataset type: {dataset_type}")
-    
+        train_input, train_labels = btc_load(cst.DATA_DIR + "/train.npy", cst.LEN_SMOOTH, horizon, seq_size)
+        val_input, val_labels = btc_load(cst.DATA_DIR + "/val.npy", cst.LEN_SMOOTH, horizon, seq_size)  
+        test_input, test_labels = btc_load(cst.DATA_DIR + "/test.npy", cst.LEN_SMOOTH, horizon, seq_size)
+        train_set = Dataset(train_input, train_labels, seq_size)
+        val_set = Dataset(val_input, val_labels, seq_size)
+        test_set = Dataset(test_input, test_labels, seq_size)
+        if config.experiment.is_debug:
+            train_set.length = 1000
+            val_set.length = 1000
+            test_set.length = 10000
+        data_module = DataModule(
+            train_set=train_set,
+            val_set=val_set,
+            test_set=test_set,
+            batch_size=config.dataset.batch_size,
+            test_batch_size=config.dataset.batch_size*4,
+            num_workers=4
+        )
+        test_loaders = [data_module.test_dataloader()]
+
     counts_train = torch.unique(train_labels, return_counts=True)
     counts_val = torch.unique(val_labels, return_counts=True)
     counts_test = torch.unique(test_labels, return_counts=True)

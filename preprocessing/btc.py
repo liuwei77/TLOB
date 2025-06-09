@@ -18,6 +18,8 @@ def btc_load(path, len_smooth, h, seq_size):
         tmp = 2
     elif h == 100:
         tmp = 1
+    else:
+        raise ValueError("h must be in [10, 20, 50, 100]")
     labels = set[seq_size-len_smooth:, -tmp]
     labels = labels[np.isfinite(labels)]
     labels = torch.from_numpy(labels).long()
@@ -193,19 +195,17 @@ class BTCDataBuilder:
             else:
                 raise ValueError(f"File {f} is not a file")
         # Save the splitted dataframes
-        train_orderbooks = train_orderbooks.drop(columns=["timestamp"])
-        val_orderbooks = val_orderbooks.drop(columns=["timestamp"])
-        test_orderbooks = test_orderbooks.drop(columns=["timestamp"])
+        train_orderbooks = train_orderbooks.drop(columns=["timestamp"]) # type: ignore
+        val_orderbooks = val_orderbooks.drop(columns=["timestamp"]) # type: ignore
+        test_orderbooks = test_orderbooks.drop(columns=["timestamp"]) # type: ignore
         self.dataframes = [train_orderbooks, val_orderbooks, test_orderbooks]
 
 
     def _normalize_dataframes(self):
         #apply z score to orderbooks
-        for i in range(len(self.dataframes)):
-            if (i == 0):
-                self.dataframes[i], mean_size, mean_prices, std_size, std_prices = z_score_orderbook(self.dataframes[i])
-            else:
-                self.dataframes[i], _, _, _, _ = z_score_orderbook(self.dataframes[i], mean_size, mean_prices, std_size, std_prices)
+        self.dataframes[0], mean_size, mean_prices, std_size, std_prices = z_score_orderbook(self.dataframes[0])
+        for i in range(1, len(self.dataframes)):
+            self.dataframes[i], _, _, _, _ = z_score_orderbook(self.dataframes[i], mean_size, mean_prices, std_size, std_prices)
 
 
     def _save(self, path_where_to_save):

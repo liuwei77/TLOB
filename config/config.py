@@ -70,6 +70,17 @@ class BTC(Dataset):
     testing_stocks: list = field(default_factory=lambda: ["BTC"])
 
 @dataclass
+class MINE(Dataset):
+    type: DatasetType = DatasetType.MINE
+    dates: list = field(default_factory=lambda: ["20200102", "20200228"])
+    sampling_type: SamplingType = SamplingType.NONE
+    sampling_time: str = "100ms"
+    sampling_quantity: int = 0
+    batch_size: int = 128
+    training_stocks: list = field(default_factory=lambda: ["MINE"])
+    testing_stocks: list = field(default_factory=lambda: ["MINE"])
+
+@dataclass
 class Experiment:
     is_data_preprocessed: bool = False
     is_sweep: bool = False
@@ -104,3 +115,4 @@ cs.store(group="model", name="deeplob", node=DeepLOB)
 cs.store(group="dataset", name="lobster", node=LOBSTER)
 cs.store(group="dataset", name="fi_2010", node=FI_2010)
 cs.store(group="dataset", name="btc", node=BTC)
+cs.store(group="dataset", name="mine", node=MINE)
