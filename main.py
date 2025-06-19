@@ -16,6 +16,8 @@ from constants import DatasetType
 
 @hydra.main(config_path="config", config_name="config")
 def hydra_app(config: Config):
+    print(isinstance(config.dataset, BTC))
+
     set_reproducibility(config.experiment.seed)
     print("Using device: ", cst.DEVICE)
     if (cst.DEVICE == "cpu"):
@@ -92,4 +94,3 @@ def set_torch():
 if __name__ == "__main__":
     set_torch()
     hydra_app()
-    

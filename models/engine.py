@@ -61,7 +61,7 @@ class Engine(LightningModule):
         self.val_predictions = []
         self.min_loss = np.inf
         self.save_hyperparameters()
-        self.last_path_ckpt = None
+        self.last_path_ckpt = ""
         self.first_test = True
         self.test_mid_prices = []
         

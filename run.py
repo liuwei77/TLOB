@@ -5,7 +5,7 @@ import os
 from torch.utils.data import DataLoader
 from lightning.pytorch.callbacks import TQDMProgressBar
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-from config.config import Config
+from config.config import Config, BTC, FI_2010, LOBSTER
 from models.engine import Engine
 from preprocessing.fi_2010 import fi_2010_load
 from preprocessing.lobster import lobster_load
@@ -19,7 +19,7 @@ def run(config: Config, accelerator):
     seq_size = config.model.hyperparameters_fixed["seq_size"]
     dataset = config.dataset.type.value
     horizon = config.experiment.horizon
-    if dataset == "LOBSTER":
+    if isinstance(config.dataset, LOBSTER):
         training_stocks = config.dataset.training_stocks
         config.experiment.dir_ckpt = f"{dataset}_{training_stocks}_seq_size_{seq_size}_horizon_{horizon}_seed_{config.experiment.seed}"
     else:
@@ -50,7 +50,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
     checkpoint_ref = config.experiment.checkpoint_reference
     checkpoint_path = os.path.join(cst.DIR_SAVED_MODEL, model_type.value, checkpoint_ref)
     dataset_type = config.dataset.type.value
-    if dataset_type == "FI_2010":
+    if isinstance(config.dataset, FI_2010):
         path = cst.DATA_DIR + "/FI_2010"
         train_input, train_labels, val_input, val_labels, test_input, test_labels = fi_2010_load(path, seq_size, horizon, config.model.hyperparameters_fixed["all_features"])
         train_set = Dataset(train_input, train_labels, seq_size)
@@ -70,7 +70,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
         )
         test_loaders = [data_module.test_dataloader()]
     
-    elif dataset_type == "BTC":
+    elif isinstance(config.dataset, BTC):
         train_input, train_labels = btc_load(cst.DATA_DIR + "/BTC/train.npy", cst.LEN_SMOOTH, horizon, seq_size)
         val_input, val_labels = btc_load(cst.DATA_DIR + "/BTC/val.npy", cst.LEN_SMOOTH, horizon, seq_size)  
         test_input, test_labels = btc_load(cst.DATA_DIR + "/BTC/test.npy", cst.LEN_SMOOTH, horizon, seq_size)
@@ -92,34 +92,43 @@ def train(config: Config, trainer: L.Trainer, run=None):
 
         test_loaders = [data_module.test_dataloader()]
         
-    elif dataset_type == "LOBSTER":
+    elif isinstance(config.dataset, LOBSTER):
         training_stocks = config.dataset.training_stocks
         testing_stocks = config.dataset.testing_stocks
-        for i in range(len(training_stocks)):
-            if i == 0:
-                for j in range(2):
-                    if j == 0:
-                        path = cst.DATA_DIR + "/" + training_stocks[i] + "/train.npy"
-                        train_input, train_labels = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
-                    if j == 1:
-                        path = cst.DATA_DIR + "/" + training_stocks[i] + "/val.npy"
-                        val_input, val_labels = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
-            else:
-                for j in range(2):
-                    if j == 0:
-                        path = cst.DATA_DIR + "/" + training_stocks[i] + "/train.npy"
-                        train_labels = torch.cat((train_labels, torch.zeros(seq_size+horizon-1, dtype=torch.long)), 0)
-                        train_input_tmp, train_labels_tmp = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
-                        train_input = torch.cat((train_input, train_input_tmp), 0)
-                        train_labels = torch.cat((train_labels, train_labels_tmp), 0)
-                    if j == 1:
-                        path = cst.DATA_DIR + "/" + training_stocks[i] + "/val.npy"
-                        val_labels = torch.cat((val_labels, torch.zeros(seq_size+horizon-1, dtype=torch.long)), 0)
-                        val_input_tmp, val_labels_tmp = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
-                        val_input = torch.cat((val_input, val_input_tmp), 0)
-                        val_labels = torch.cat((val_labels, val_labels_tmp), 0)
+        # i == 0:
+        path = cst.DATA_DIR + "/" + training_stocks[0] + "/train.npy"
+        train_input, train_labels = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
+        path = cst.DATA_DIR + "/" + training_stocks[0] + "/val.npy"
+        val_input, val_labels = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
+        for i in range(1, len(training_stocks)):
+            for j in range(2):
+                if j == 0:
+                    path = cst.DATA_DIR + "/" + training_stocks[i] + "/train.npy"
+                    train_labels = torch.cat((train_labels, torch.zeros(seq_size+horizon-1, dtype=torch.long)), 0)
+                    train_input_tmp, train_labels_tmp = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
+                    train_input = torch.cat((train_input, train_input_tmp), 0)
+                    train_labels = torch.cat((train_labels, train_labels_tmp), 0)
+                if j == 1:
+                    path = cst.DATA_DIR + "/" + training_stocks[i] + "/val.npy"
+                    val_labels = torch.cat((val_labels, torch.zeros(seq_size+horizon-1, dtype=torch.long)), 0)
+                    val_input_tmp, val_labels_tmp = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
+                    val_input = torch.cat((val_input, val_input_tmp), 0)
+                    val_labels = torch.cat((val_labels, val_labels_tmp), 0)
         test_loaders = []
-        for i in range(len(testing_stocks)):
+        path = cst.DATA_DIR + "/" + testing_stocks[0] + "/test.npy"
+        test_input, test_labels = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
+        test_set = Dataset(test_input, test_labels, seq_size)
+        test_dataloader = DataLoader(
+            dataset=test_set,
+            batch_size=config.dataset.batch_size*4,
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False,
+            num_workers=4,
+            persistent_workers=True
+        )
+        test_loaders.append(test_dataloader)
+        for i in range(1, len(testing_stocks)):
             path = cst.DATA_DIR + "/" + testing_stocks[i] + "/test.npy"
             test_input, test_labels = lobster_load(path, config.model.hyperparameters_fixed["all_features"], cst.LEN_SMOOTH, horizon, seq_size)
             test_set = Dataset(test_input, test_labels, seq_size)
@@ -184,6 +193,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
     if "FINETUNING" in experiment_type or "EVALUATION" in experiment_type:
         if checkpoint_ref != "":
             checkpoint = torch.load(checkpoint_path, map_location=cst.DEVICE, weights_only=True)
+        else:
+            raise ValueError("No checkpoint provided")
             
         print("Loading model from checkpoint: ", config.experiment.checkpoint_reference) 
         lr = checkpoint["hyper_parameters"]["lr"]
@@ -264,6 +275,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 map_location=cst.DEVICE,
                 len_test_dataloader=len(test_loaders[0])
                 )
+        else:
+            raise ValueError("Model type not supported")
               
     else:
         if model_type == cst.ModelType.MLPLOB:
@@ -328,6 +341,8 @@ def train(config: Config, trainer: L.Trainer, run=None):
                 dataset_type=dataset_type,
                 len_test_dataloader=len(test_loaders[0])
             )
+        else:
+            raise ValueError("Model type not supported")
     
     print("total number of parameters: ", sum(p.numel() for p in model.parameters()))   
     train_dataloader, val_dataloader = data_module.train_dataloader(), data_module.val_dataloader()
@@ -345,16 +360,16 @@ def train(config: Config, trainer: L.Trainer, run=None):
         for i in range(len(test_loaders)):
             test_dataloader = test_loaders[i]
             output = trainer.test(best_model, test_dataloader)
-            if run is not None and dataset_type == "LOBSTER":
-                run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
+            if run is not None and isinstance(config.dataset, LOBSTER):
+                run.log({f"f1 {config.dataset.testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
             elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI_2010 ": output[0]["f1_score"]}, commit=False)
     else:
         for i in range(len(test_loaders)):
             test_dataloader = test_loaders[i]
             output = trainer.test(model, test_dataloader)
-            if run is not None and dataset_type == "LOBSTER":
-                run.log({f"f1 {testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
+            if run is not None and isinstance(config.dataset, LOBSTER):
+                run.log({f"f1 {config.dataset.testing_stocks[i]} best": output[0]["f1_score"]}, commit=False)
             elif run is not None and dataset_type == "FI_2010":
                 run.log({f"f1 FI_2010 ": output[0]["f1_score"]}, commit=False)
 
@@ -393,7 +408,7 @@ def print_setup(config: Config):
     print("Is sweep: ", config.experiment.is_sweep)
     print(config.experiment.type)
     print("Is debug: ", config.experiment.is_debug) 
-    if config.dataset.type == cst.DatasetType.LOBSTER:
+    if  isinstance(config.dataset, LOBSTER):
         print("Training stocks: ", config.dataset.training_stocks)
         print("Testing stocks: ", config.dataset.testing_stocks)
 
