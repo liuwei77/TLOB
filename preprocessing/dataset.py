@@ -70,6 +70,8 @@ class DataModule(pl.LightningDataModule):
         )
     
     def test_dataloader(self):
+        if self.test_set is None:
+            raise Exception("No test set provided")
         return DataLoader(
             dataset=self.test_set,
             batch_size=self.test_batch_size,

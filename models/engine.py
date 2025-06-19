@@ -150,6 +150,8 @@ class Engine(LightningModule):
         targets = np.concatenate(self.val_targets)    
         predictions = np.concatenate(self.val_predictions)
         class_report = classification_report(targets, predictions, digits=4, output_dict=True)
+        if isinstance(class_report, str):
+            raise ValueError("class_report is not a dict")
         print(classification_report(targets, predictions, digits=4))
         self.log("val_f1_score", class_report["macro avg"]["f1-score"])
         self.log("val_accuracy", class_report["accuracy"])
@@ -165,6 +167,8 @@ class Engine(LightningModule):
         predictions_path = os.path.join(cst.DIR_SAVED_MODEL, str(self.model_type), self.dir_ckpt, "predictions")
         np.save(predictions_path, predictions)
         class_report = classification_report(targets, predictions, digits=4, output_dict=True)
+        if isinstance(class_report, str):
+            raise ValueError("class_report is not a dict")
         print(classification_report(targets, predictions, digits=4))
         self.log("test_loss", sum(self.test_losses) / len(self.test_losses))
         self.log("f1_score", class_report["macro avg"]["f1-score"])
@@ -194,7 +198,7 @@ class Engine(LightningModule):
     
 
     def model_checkpointing(self, loss):        
-        if self.last_path_ckpt is not None:
+        if self.last_path_ckpt != "":
             os.remove(self.last_path_ckpt)
         filename_ckpt = ("val_loss=" + str(round(loss, 3)) +
                              "_epoch=" + str(self.current_epoch) +
@@ -223,7 +227,7 @@ class Engine(LightningModule):
             try:
                 torch.onnx.export(
                     self.model,                  # model being run
-                    dummy_input,                 # model input (or a tuple for multiple inputs)
+                    dummy_input,                 # model input (or a tuple for multiple inputs) # type: ignore
                     onnx_path,                   # where to save the model
                     export_params=True,          # store the trained parameter weights inside the model file
                     opset_version=12,            # the ONNX version to export the model to

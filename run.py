@@ -153,6 +153,7 @@ def train(config: Config, trainer: L.Trainer, run=None):
             train_set=train_set,
             val_set=val_set,
             batch_size=config.dataset.batch_size,
+            test_set=test_set,
             test_batch_size=config.dataset.batch_size*4,
             num_workers=4
         )

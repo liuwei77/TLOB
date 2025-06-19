@@ -13,10 +13,11 @@ from run import run
 from preprocessing.lobster import LOBSTERDataBuilder
 from preprocessing.btc import BTCDataBuilder
 from constants import DatasetType
+from omegaconf import DictConfig, OmegaConf
 
 @hydra.main(config_path="config", config_name="config")
-def hydra_app(config: Config):
-    print(isinstance(config.dataset, BTC))
+def hydra_app(cfg: DictConfig):
+    config: Config = OmegaConf.to_object(cfg) # type: ignore
 
     set_reproducibility(config.experiment.seed)
     print("Using device: ", cst.DEVICE)
